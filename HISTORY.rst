@@ -2,7 +2,7 @@
 History
 =======
 
-0.1.0 (2019-05-26)
+0.1.0 (2019-??-??)
 ------------------
 
-* First release.
+* Custom UnimodalBeta and ScaledBeta distributions for use in policies with constrained output spaces
