@@ -1,0 +1,6 @@
+coverage
+pytest
+pytest-runner
+hypothesis
+pytest-cov
+flake8
