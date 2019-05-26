@@ -15,8 +15,10 @@ Torforce
 
 
 
-
 torforce is a library for reinforcement learning in pytorch.
+
+
+this library is currently in active development towards 0.1.0. until then nothing is stable and the main branch will be develop.
 
 
 * Free software: MIT license
