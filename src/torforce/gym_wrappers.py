@@ -15,6 +15,14 @@ import gym
 import numpy as np
 
 
+class StepInTerminalStateError(Exception):
+
+    msg = 'May not call step when the enviornment is in a terminal state! (hint... call reset)'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(self.msg, *args, **kwargs)
+
+
 class StatefulBaseWrapper(gym.Wrapper):
 
     """This Wrapper is a base class that adds stateful functionality and pipeline interfaces to downstream wrappers.
@@ -103,21 +111,18 @@ class StatefulBaseWrapper(gym.Wrapper):
         return x
 
     def reset(self, **kwargs):
-        self._current_state = self.observation_pipeline(super().reset(**kwargs))
+        self._current_state = self.observation_pipeline(self.env.reset(**kwargs))
         self._total_reward = 0.
         self._done = False
         self._steps = 0
         return self._current_state
 
     def step(self, action):
+        if self.done:
+            raise StepInTerminalStateError()
         observation, reward, done, info = self.env.step(self.action_pipeline(action))
         self._current_state = self.observation_pipeline(observation)
         self._steps += 1
         self._done = done
         self._total_reward += reward
         return self.current_state, self.reward_pipeline(reward), done, info
-
-
-
-
-
