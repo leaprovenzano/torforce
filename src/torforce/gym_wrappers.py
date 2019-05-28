@@ -23,7 +23,7 @@ class StepInTerminalStateError(Exception):
         super().__init__(self.msg, *args, **kwargs)
 
 
-class StatefulBaseWrapper(gym.Wrapper):
+class StatefulWrapper(gym.Wrapper):
 
     """This Wrapper is a base class that adds stateful functionality and pipeline interfaces to downstream wrappers.
     for the most part you would not use this wrapper directly, the only exception being a case where you want to use
@@ -119,7 +119,7 @@ class StatefulBaseWrapper(gym.Wrapper):
 
     def step(self, action):
         """take a step in the enviornment by calling step in the unrapped env with an action that has been preprocessed
-        through the `action_pipeline` method. Since we're stateful we'll cache new state as a result of taking the step 
+        through the `action_pipeline` method. Since we're stateful we'll cache new state as a result of taking the step
         in `current_state` and add the reward recieved to our `total_reward`, if the resulting state is terminal the
         `done` attr will also be set to True.
 

@@ -4,14 +4,14 @@ from hypothesis.stateful import RuleBasedStateMachine, rule, invariant, precondi
 
 import numpy as np
 import gym
-from torforce.gym_wrappers import StatefulBaseWrapper, StepInTerminalStateError
+from torforce.gym_wrappers import StatefulWrapper, StepInTerminalStateError
 
 
 
 
 
 def test_calling_step_on_done_raises_error():
-    env = StatefulBaseWrapper(gym.make('CartPole-v1'))
+    env = StatefulWrapper(gym.make('CartPole-v1'))
     done = env.done
     while not done:
         env.step(env.action_space.sample())
@@ -21,13 +21,13 @@ def test_calling_step_on_done_raises_error():
 
 
 
-class StateFulBaseWrapperMachine(RuleBasedStateMachine):
+class StatefulWrapperMachine(RuleBasedStateMachine):
 
     envname = 'CartPole-v1'
 
     def __init__(self):
         super().__init__()
-        self.env = StatefulBaseWrapper(gym.make(self.envname))
+        self.env = StatefulWrapper(gym.make(self.envname))
         self.last_obs = None
         self.env.seed = 10
         self.total_reward = 0.
@@ -72,4 +72,4 @@ class StateFulBaseWrapperMachine(RuleBasedStateMachine):
         assert any(self.env.current_state != self.last_obs)
 
 
-TestCartpoleStateMachine = StateFulBaseWrapperMachine.TestCase
+TestCartpoleStateMachine = StatefulWrapperMachine.TestCase
