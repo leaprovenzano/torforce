@@ -118,6 +118,20 @@ class StatefulBaseWrapper(gym.Wrapper):
         return self._current_state
 
     def step(self, action):
+        """take a step in the enviornment by calling step in the unrapped env with an action that has been preprocessed
+        through the `action_pipeline` method. Since we're stateful we'll cache new state as a result of taking the step 
+        in `current_state` and add the reward recieved to our `total_reward`, if the resulting state is terminal the
+        `done` attr will also be set to True.
+
+        Args:
+            action : action will be further passed to `action_pipeline` before the unwrapped env sees it.
+
+        Returns:
+            state, reward, done, info
+
+        Raises:
+            StepInTerminalStateError: where an agent has tried to step in a terminal state raise this exception.
+        """
         if self.done:
             raise StepInTerminalStateError()
         observation, reward, done, info = self.env.step(self.action_pipeline(action))
