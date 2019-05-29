@@ -9,10 +9,13 @@ these are little issues that I think often make reading RL code more confusing w
 algorithms where they become confusing and make code less extensible.
 
 """
-
-from typing import Union
+import functools
+from typing import Union, Iterable
 import gym
 import numpy as np
+import torch
+
+from torforce.utils import MinMaxScaler
 
 
 class StepInTerminalStateError(Exception):
@@ -21,6 +24,69 @@ class StepInTerminalStateError(Exception):
 
     def __init__(self, *args, **kwargs):
         super().__init__(self.msg, *args, **kwargs)
+
+
+def is_reducable(x: Iterable) -> bool:
+    return all(x == x[0])
+
+
+def is_finite(x: Iterable) -> bool:
+    return all(np.isfinite(x))
+
+
+class TensorActionInterface:
+
+    def __init__(self, env):
+        self.action_dims = self.get_action_dims(env)
+        self.action_range = self.get_action_range(env)
+
+    def get_action_range(self, env):
+        return None
+
+    def get_action_dims(self, env):
+        raise NotImplementedError('get_action_dims not implemented: subclass responsibility')
+
+    def tensor_to_action(self, x):
+        raise NotImplementedError('tensor_to_action not implemented: subclass responsibility')
+
+    def action_to_tensor(self, x):
+        raise NotImplementedError('action_to_tensor not implemented: subclass responsibility')
+
+
+class DiscreteActionInterface(TensorActionInterface):
+
+    def __init__(self, env):
+        super().__init__(env)
+
+    def get_action_dims(self, env):
+        return env.action_space.n
+
+    def tensor_to_action(self, x):
+        return x.item()
+
+    def action_to_tensor(self, x):
+        return torch.IntTensor([x])
+
+
+class ContinuiousActionInterface(TensorActionInterface):
+
+    def __init__(self, env):
+        super().__init__(env)
+
+    def get_action_range(self, env):
+        action_range = env.action_space.low, env.action_space.high
+        if all(map(is_finite, action_range)):
+            return tuple(x[0] if is_reducable(x) else x for x in action_range)
+        return None
+
+    def get_action_dims(self, env):
+        return env.action_space.shape[0]
+
+    def tensor_to_action(self, x):
+        return np.asarray(x)
+
+    def action_to_tensor(self, x):
+        return torch.FloatTensor(x)
 
 
 class StatefulWrapper(gym.Wrapper):
@@ -140,3 +206,68 @@ class StatefulWrapper(gym.Wrapper):
         self._done = done
         self._total_reward += reward
         return self.current_state, self.reward_pipeline(reward), done, info
+
+
+class TensorEnvWrapper(StatefulWrapper):
+
+    """Summary
+
+    Args:
+        env (gym.Env): gym enviornment to wrap the raw env can be accessed directly from the wrapper at the `env` attr.
+    """
+    
+    def __init__(self, env):
+        super(TensorEnvWrapper, self).__init__(env)
+
+        if self.discrete:
+            self._action_interface = DiscreteActionInterface(self)
+        else:
+            self._action_interface = ContinuiousActionInterface(self)
+
+        self.action_space.sample = self._sample_wrapper(self.action_space.sample)
+
+    def discrete(self):
+        return self.action_space.dtype.kind == 'i'
+
+    @property
+    def action_dims(self):
+        return self._action_interface.action_dims
+
+    @property
+    def action_range(self):
+        return self._action_interface.action_range
+
+    @staticmethod
+    def tensorize(x):
+        return torch.FloatTensor(x)
+
+    def action_pipeline(self, x):
+        return self._action_interface.tensor_to_action(x)
+
+    def outgoing_action_pipeline(self, x):
+        return self._action_interface.action_to_tensor(x)
+
+    def observation_pipeline(self, x):
+        return self.tensorize(x)
+
+    def reward_pipeline(self, x):
+        return self.tensorize([x])
+
+    def _sample_wrapper(self, f):
+        @functools.wraps(f)
+        def inner(*args, **kwargs):
+            return self.outgoing_action_pipeline(f(*args, **kwargs))
+        return inner
+
+
+class ScaledObservationWrapper(TensorEnvWrapper):
+    """ObservationWrapper for openai gym's atari  RAM envs. just scales the observation between an observation_range
+    """
+
+    def __init__(self, env, observation_range=(-1, 1)):
+        self.scaler = MinMaxScaler((env.observation_space.low, env.observation_space.high), observation_range)
+        super().__init__(env)
+
+    def observation_pipeline(self, observation):
+        scaled = self.scaler.scale(observation)
+        return super().observation_pipeline(scaled)
