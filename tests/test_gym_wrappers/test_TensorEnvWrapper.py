@@ -69,7 +69,7 @@ class TestLunarLanderContinuous(TensorEnvSuite):
     env = TensorEnvWrapper(gym.make(expected.name))
 
 
-class TestScaledObservationWrapper(TensorEnvSuite):
+class TestScaledObservationWrapper:
 
     """test scaled observation wrapper on atari ram enviornment"""
 
@@ -80,7 +80,6 @@ class TestScaledObservationWrapper(TensorEnvSuite):
         print(self.env.current_state)
         assert all(self.env.current_state >= -1)
         assert all(self.env.current_state <= 1)
-
 
 
 
