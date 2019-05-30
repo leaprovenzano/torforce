@@ -141,8 +141,25 @@ class StatefulWrapper(gym.Wrapper):
 
 class TensorEnvWrapper(StatefulWrapper):
 
-    """Summary
+    """Wrapper for gym envs to take some of the more annoying work out of tensorizing and untensorizing stuff while
+    building agents and track a couple essential attributes.
 
+    a TensorEnvWrapper on your gym env means:
+        - you get the same basic state tracking as in StateFull wrapper.
+        - observations and rewards coming from the enviornment are always torch tensors
+        - actions going into the enviornment as torch tensors are properly transformed back into numpy.
+        - sampled actions coming out of the enviornment (via `action_space.sample` are torch tensors.)
+
+    Properties:
+        discrete (bool): if `True` the env's action space is discrete.
+        action_dims (int): dimensions of action space... if discrete this will be the number of possible actions. If
+            continious it will be the dimension of actual action space. This will generally corespond with action output
+            layers in RL models.
+        action_range (tuple | None) : in continuious action spaces this will be the min and max action range where the
+            action range is finite. In discrete cases or cases where there is no finite action range this value will be
+            None.
+
+    
     Args:
         env (gym.Env): gym enviornment to wrap the raw env can be accessed directly from the wrapper at the `env` attr.
     """
@@ -158,32 +175,32 @@ class TensorEnvWrapper(StatefulWrapper):
         self.action_space.sample = self._sample_wrapper(self.action_space.sample)
 
     @property
-    def discrete(self):
+    def discrete(self) -> bool:
         return str(self.env.action_space.dtype).startswith('int')
 
     @property
-    def action_dims(self):
+    def action_dims(self) -> int:
         return self._action_interface.action_dims
 
     @property
-    def action_range(self):
+    def action_range(self) -> Union[tuple, None]:
         return self._action_interface.action_range
 
     @staticmethod
-    def tensorize(x):
+    def _tensorize(x):
         return torch.FloatTensor(x)
 
-    def action_pipeline(self, x):
+    def action_pipeline(self, x) :
         return self._action_interface.tensor_to_action(x)
 
-    def outgoing_action_pipeline(self, x):
+    def outgoing_action_pipeline(self, x) -> torch.Tensor:
         return self._action_interface.action_to_tensor(x)
 
-    def observation_pipeline(self, x):
-        return self.tensorize(x)
+    def observation_pipeline(self, x: np.ndarray) -> torch.Tensor:
+        return self._tensorize(x)
 
-    def reward_pipeline(self, x):
-        return self.tensorize([x])
+    def reward_pipeline(self, x: np.ndarray) -> torch.Tensor:
+        return self._tensorize([x])
 
     def _sample_wrapper(self, f):
         @functools.wraps(f)
@@ -193,7 +210,11 @@ class TensorEnvWrapper(StatefulWrapper):
 
 
 class ScaledObservationWrapper(TensorEnvWrapper):
-    """ObservationWrapper for openai gym's atari  RAM envs. just scales the observation between an observation_range
+    """A tensor env wrapper that scales observations just scales the observation between an observation_range
+
+    Args:
+        env (gym.Env): gym enviornment to wrap the raw env can be accessed directly from the wrapper at the `env` attr.
+        observation_range (tuple, optional): tuple representing new min and max values for rescaled observations.
     """
 
     def __init__(self, env, observation_range=(-1, 1)):
