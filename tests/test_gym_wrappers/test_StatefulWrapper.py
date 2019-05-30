@@ -4,7 +4,7 @@ from hypothesis.stateful import RuleBasedStateMachine, rule, invariant, precondi
 
 import numpy as np
 import gym
-from torforce.gym_wrappers import StatefulWrapper, StepInTerminalStateError
+from torforce.gym_wrappers.wrappers import StatefulWrapper, StepInTerminalStateError
 
 
 

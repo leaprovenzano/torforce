@@ -1,14 +1,3 @@
-"""Wrappers for gym learning enviornments. These wrappers were mainly written to handle a few annoyances  after a lot of
-time working with gym and pytorch and looking at different implementations.
-
-these are little issues that I think often make reading RL code more confusing which sucks:
-
-1. It's super annoying working with mixed torch.tensors and numpy arrays.
-2. Transient state passed between many functions: if we can ask the env for the current state this is simplified.
-3. Lack of unified interface for simple enviornment preprocessing steps which means they often end up mixed deep in
-algorithms where they become confusing and make code less extensible.
-
-"""
 import functools
 from typing import Union, Iterable
 import gym
@@ -16,6 +5,7 @@ import numpy as np
 import torch
 
 from torforce.utils import MinMaxScaler
+from .action_interface import ContinuiousActionInterface, DiscreteActionInterface
 
 
 class StepInTerminalStateError(Exception):
@@ -24,96 +14,6 @@ class StepInTerminalStateError(Exception):
 
     def __init__(self, *args, **kwargs):
         super().__init__(self.msg, *args, **kwargs)
-
-
-def is_reducable(x: Iterable) -> bool:
-    return all(x == x[0])
-
-
-def is_finite(x: Iterable) -> bool:
-    return all(np.isfinite(x))
-
-
-class TensorActionInterface:
-
-    """Base class for Action interfaces. All action interfaces should inherit from this class
-    
-    Attributes:
-        action_dims (int): dimensions of action space... if discrete this will be the number of possible actions. If
-            continious it will be the dimension of actual action space. This will generally corespond with action output
-            layers in RL models.
-        action_range (tuple | None): None by default and always None for discrete actions. Otherwise min and max action
-            range.
-    """
-    
-    def __init__(self, env):
-        self.action_dims = self.get_action_dims(env)
-        self.action_range = self.get_action_range(env)
-
-    def _get_action_range(self, env):
-        return None
-
-    def _get_action_dims(self, env):
-        raise NotImplementedError('get_action_dims not implemented: subclass responsibility')
-
-    def tensor_to_action(self, x):
-        raise NotImplementedError('tensor_to_action not implemented: subclass responsibility')
-
-    def action_to_tensor(self, x):
-        raise NotImplementedError('action_to_tensor not implemented: subclass responsibility')
-
-
-class DiscreteActionInterface(TensorActionInterface):
-
-    """Interface For discrete actions. here `action_range` will always be None and `action_dims` will be the number of
-    actions available in the space.
-
-    Attributes:
-        action_dims (int): dimensions of action space this will be the number of possible actions.
-        action_range (None): action_range is always None for discrete action spaces
-    """
-    
-    def __init__(self, env):
-        super().__init__(env)
-
-    def _get_action_dims(self, env):
-        return env.action_space.n
-
-    def tensor_to_action(self, x: torch.IntTensor) -> int:
-        return x.item()
-
-    def action_to_tensor(self, x: int) -> torch.IntTensor:
-        return torch.IntTensor([x])
-
-
-class ContinuiousActionInterface(TensorActionInterface):
-
-    """Interface for continuious action spaces.
-
-    Attributes:
-        action_dims (int): dimensions of action space. This will generally corespond with action output layers in RL
-            models.
-        action_range (tuple | None): if the action space is finite and bounded this will be the min and max bounds
-            of that action space, in the case that any features of the action space are not finite it will be None.
-    """
-    
-    def __init__(self, env):
-        super().__init__(env)
-
-    def _get_action_range(self, env):
-        action_range = env.action_space.low, env.action_space.high
-        if all(map(is_finite, action_range)):
-            return tuple(x[0] if is_reducable(x) else x for x in action_range)
-        return None
-
-    def _get_action_dims(self, env):
-        return env.action_space.shape[0]
-
-    def tensor_to_action(self, x: torch.FloatTensor) -> np.ndarray:
-        return np.asarray(x)
-
-    def action_to_tensor(self, x: np.ndarray) -> torch.FloatTensor:
-        return torch.FloatTensor(x)
 
 
 class StatefulWrapper(gym.Wrapper):
@@ -145,7 +45,6 @@ class StatefulWrapper(gym.Wrapper):
     @property
     def name(self):
         return self.spec.id
-    
 
     @property
     def current_state(self):
@@ -247,7 +146,7 @@ class TensorEnvWrapper(StatefulWrapper):
     Args:
         env (gym.Env): gym enviornment to wrap the raw env can be accessed directly from the wrapper at the `env` attr.
     """
-    
+
     def __init__(self, env):
         super(TensorEnvWrapper, self).__init__(env)
 
@@ -300,7 +199,6 @@ class ScaledObservationWrapper(TensorEnvWrapper):
     def __init__(self, env, observation_range=(-1, 1)):
         self.scaler = MinMaxScaler((env.observation_space.low, env.observation_space.high), observation_range)
         super().__init__(env)
-        
 
     def observation_pipeline(self, observation):
         scaled = self.scaler.scale(observation)
