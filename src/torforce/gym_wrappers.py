@@ -116,6 +116,11 @@ class StatefulWrapper(gym.Wrapper):
         self.reset()
 
     @property
+    def name(self):
+        return self.spec.id
+    
+
+    @property
     def current_state(self):
         return self._current_state
 
@@ -226,8 +231,9 @@ class TensorEnvWrapper(StatefulWrapper):
 
         self.action_space.sample = self._sample_wrapper(self.action_space.sample)
 
+    @property
     def discrete(self):
-        return self.action_space.dtype.kind == 'i'
+        return str(self.env.action_space.dtype).startswith('int')
 
     @property
     def action_dims(self):
@@ -267,6 +273,7 @@ class ScaledObservationWrapper(TensorEnvWrapper):
     def __init__(self, env, observation_range=(-1, 1)):
         self.scaler = MinMaxScaler((env.observation_space.low, env.observation_space.high), observation_range)
         super().__init__(env)
+        
 
     def observation_pipeline(self, observation):
         scaled = self.scaler.scale(observation)
