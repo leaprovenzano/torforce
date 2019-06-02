@@ -3,14 +3,7 @@ import numpy as np
 import torch
 
 from torforce.utils import MinMaxScaler
-
-
-def is_reducable(x: Iterable) -> bool:
-    return all(x == x[0])
-
-
-def is_finite(x: Iterable) -> bool:
-    return all(np.isfinite(x))
+from torforce.utils.generic import all_equal, all_finite
 
 
 class TensorActionInterface:
@@ -81,8 +74,8 @@ class ContinuiousActionInterface(TensorActionInterface):
 
     def _get_action_range(self, env):
         action_range = env.action_space.low, env.action_space.high
-        if all(map(is_finite, action_range)):
-            return tuple(x[0] if is_reducable(x) else x for x in action_range)
+        if all(map(all_finite, action_range)):
+            return tuple(x[0] if all_equal(x) else x for x in action_range)
         return None
 
     def _get_action_dims(self, env):
