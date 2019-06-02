@@ -58,7 +58,7 @@ class TestMinMaxRange(object):
         assert np.all(holder.rng.high == high)
         assert np.all(holder.rng.span == high - low)
 
-    @given(valid_high_low_arrays(MinMaxRange.epsilon))
+    @given(valid_high_low_arrays(MinMaxRange.EPSILON))
     def test_valid_arrays_pass(self, rng):
         low, high = rng
         self.assert_valid(low, high)
@@ -70,7 +70,7 @@ class TestMinMaxRange(object):
         self.assert_valid(arr, arr.max() + 1)
         self.assert_valid(arr.min() - 1, arr)
 
-    @given(non_matching_shape_arrays(MinMaxRange.epsilon))
+    @given(non_matching_shape_arrays(MinMaxRange.EPSILON))
     def test_invalid_array_shapes(self, rng):
         low, high = rng
         self.assert_raises_value_error(low, high)

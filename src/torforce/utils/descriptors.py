@@ -37,18 +37,18 @@ class MinMaxRange(ValidationDescriptor):
     Validation is preformed on min and max to be sure the values confirm to certain constraints:
 
         - both min and max must contain only finite values
-        - min must be < max by at least epsilon
+        - min must be < max by at least `EPSILON`
         - if min and max are arrays or matrices they must have the same shape
         - if only one of min and max are arraylike the other value may be a scaler
 
     Attributes:
-        epsilon (float): minimum span between high and low. 1e-4 by default.
         high (float | np.array | torch.Tensor): high end of range
         low (float | np.array | torch.Tensor): low end of range
 
     """
 
-    epsilon = 1e-4
+    # minimum span between high and low.
+    EPSILON = 1e-4
 
     def __init__(self, low=None, high=None):
         self.low = low
@@ -113,8 +113,8 @@ class MinMaxRange(ValidationDescriptor):
         # if check dims should this be an array or tensor
         self._type_and_dims_validate(low, high)
 
-        if np.any(np.asarray(high - low) < self.epsilon):
+        if np.any(np.asarray(high - low) < self.EPSILON):
             self._raise_on_invalidation(
-                f'low values must be less than high values with a margin of at least {self.epsilon}', f'low= {low}  high= {high}')
+                f'low values must be less than high values with a margin of at least {self.EPSILON}', f'low= {low}  high= {high}')
 
         return True
