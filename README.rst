@@ -27,5 +27,6 @@ this library is currently in active development towards 0.1.0. until then nothin
 Features
 --------
 
-* TODO
+* Custom `UnimodalBeta` and `ScaledBeta` distributions for use in policies with constrained output spaces.
+* `torforce.env_wrappers` for wrapping gym envs in a consistent interface pipelines and state tracking. `TensorEnvWrapper` handles tensor numpy conversion headaches
 
