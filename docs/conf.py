@@ -24,6 +24,26 @@ sys.path.insert(0, os.path.abspath('../src'))
 
 import torforce
 
+
+# -- Extensions to the  Napoleon GoogleDocstring class ---------------------
+
+"""
+this snippit is in part from michael gorez's post 
+https://michaelgoerz.net/notes/extending-sphinx-napoleon-docstring-sections.html
+here we just want to assure the more compact ivar style class attibutes are still called `Attributes` 
+( instead of variables which is napoleans default )
+"""
+
+from sphinx.ext.napoleon.docstring import GoogleDocstring
+
+
+def parse_attributes_section(self, section):
+    return self._format_fields('Attributes', self._consume_fields())
+
+
+GoogleDocstring._parse_attributes_section = parse_attributes_section
+
+
 # -- General configuration ---------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -32,11 +52,22 @@ import torforce
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 
+extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               # napolean for google style docstrings
-              'sphinx.ext.napoleon'
+              'sphinx.ext.napoleon',
+              'sphinx.ext.autosummary'
               ]
+
+
+autodoc_member_order = 'bysource'
+
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+napoleon_use_param = False
+napoleon_use_rtype = False
+napoleon_use_ivar = True
+# autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
