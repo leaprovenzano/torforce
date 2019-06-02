@@ -1,6 +1,6 @@
-========
-Torforce
-========
+==============
+About torforce
+==============
 
 
 .. image:: https://img.shields.io/pypi/v/torforce.svg
