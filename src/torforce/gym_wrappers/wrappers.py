@@ -25,13 +25,6 @@ class StatefulWrapper(gym.Wrapper):
 
     Args:
         env (gym.Env): gym enviornment to wrap the raw env can be accessed directly from the wrapper at the `env` attr.
-
-    Attributes:
-        current_state (np.array): this represents the current state of the env and so is the most recent observation
-            made in the enviornment at any given time. This attribute is updated by both the reset and step methods.
-        done (bool): tracks terminal state, if true the episode in this enviornment is complete and needs to be reset.
-        steps (int): the total number of steps taken in the current episode
-        total_reward (float): the total reward for the current episode.
     """
 
     def __init__(self, env: gym.Env):
@@ -43,23 +36,33 @@ class StatefulWrapper(gym.Wrapper):
         self.reset()
 
     @property
-    def name(self):
+    def name(self) ->str:
+        """str: the name of the enviornment (shortcut for env.spec.id)
+        """
         return self.spec.id
 
     @property
-    def current_state(self):
+    def current_state(self) -> np.array:
+        """this represents the current state of the env cached at every step.
+        """
         return self._current_state
 
     @property
-    def total_reward(self):
+    def total_reward(self) ->float:
+        """int: running total reward for the current episode
+        """
         return self._total_reward
 
     @property
-    def steps(self):
+    def steps(self) -> int:
+        """int: the number of steps in this episode that have been taken
+        """
         return self._steps
 
     @property
-    def done(self):
+    def done(self) -> bool:
+        """bool: if true the episode is terminal and should be reset before the next step
+        """
         return self._done
 
     def observation_pipeline(self, x: np.array) -> np.array:
@@ -82,9 +85,8 @@ class StatefulWrapper(gym.Wrapper):
         This is a no-op by default. override this method when you want to add reward processing steps in a
         subclass.
 
-        Note:
-            by default this step will be called for rewards on output only. This way the total_reward attr will always
-            reflect the raw reward from the enviornment regardless of your reward_pipeline.
+        By default the `reward_pipeline` is called for rewards on output only. This way the `total_reward`
+        property will always reflect the raw reward from the enviornment regardless of your `reward_pipeline`.
 
         Args:
             x (np.array): reward
@@ -144,21 +146,12 @@ class TensorEnvWrapper(StatefulWrapper):
     """Wrapper for gym envs to take some of the more annoying work out of tensorizing and untensorizing stuff while
     building agents and track a couple essential attributes.
 
-    a TensorEnvWrapper on your gym env means:
+    a TensorEnvWrapper on your gym env means
+
         - you get the same basic state tracking as in StateFull wrapper.
         - observations and rewards coming from the enviornment are always torch tensors
         - actions going into the enviornment as torch tensors are properly transformed back into numpy.
         - sampled actions coming out of the enviornment (via `action_space.sample` are torch tensors.)
-
-    Properties:
-        discrete (bool): if `True` the env's action space is discrete.
-        action_dims (int): dimensions of action space... if discrete this will be the number of possible actions. If
-            continious it will be the dimension of actual action space. This will generally corespond with action output
-            layers in RL models.
-        action_range (tuple | None) : in continuious action spaces this will be the min and max action range where the
-            action range is finite. In discrete cases or cases where there is no finite action range this value will be
-            None.
-
     
     Args:
         env (gym.Env): gym enviornment to wrap the raw env can be accessed directly from the wrapper at the `env` attr.
@@ -176,21 +169,31 @@ class TensorEnvWrapper(StatefulWrapper):
 
     @property
     def discrete(self) -> bool:
+        """bool: if `true` the env's action space is discrete.
+        """
         return str(self.env.action_space.dtype).startswith('int')
 
     @property
     def action_dims(self) -> int:
+        """bool: if `true`  dimensions of action space... if discrete this will be the number of possible actions. If
+            continious it will be the dimension of actual action space. This will generally corespond with action output
+            layers in RL models.
+        """
         return self._action_interface.action_dims
 
     @property
     def action_range(self) -> Union[tuple, None]:
+        """Union[tuple, None]: in continuious action spaces this will be the min and max action range where the
+            action range is finite. In discrete cases or cases where there is no finite action range this value will be
+            None.
+        """
         return self._action_interface.action_range
 
     @staticmethod
     def _tensorize(x):
         return torch.FloatTensor(x)
 
-    def action_pipeline(self, x) :
+    def action_pipeline(self, x):
         return self._action_interface.tensor_to_action(x)
 
     def outgoing_action_pipeline(self, x) -> torch.Tensor:
