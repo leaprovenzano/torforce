@@ -152,7 +152,7 @@ class TensorEnvWrapper(StatefulWrapper):
         - observations and rewards coming from the enviornment are always torch tensors
         - actions going into the enviornment as torch tensors are properly transformed back into numpy.
         - sampled actions coming out of the enviornment (via `action_space.sample` are torch tensors.)
-    
+
     Args:
         env (gym.Env): gym enviornment to wrap the raw env can be accessed directly from the wrapper at the `env` attr.
     """
@@ -166,6 +166,12 @@ class TensorEnvWrapper(StatefulWrapper):
             self._action_interface = ContinuiousActionInterface(self)
 
         self.action_space.sample = self._sample_wrapper(self.action_space.sample)
+
+    @property
+    def config(self) -> dict:
+        """dict: info dict about this enviornment. should be enough to rebuild the env if needed
+        """
+        return dict(wrapper=f'{self.__module__}.{self.__class__.__name__}', name=self.name)
 
     @property
     def discrete(self) -> bool:
@@ -221,8 +227,17 @@ class ScaledObservationWrapper(TensorEnvWrapper):
     """
 
     def __init__(self, env, observation_range=(-1, 1)):
-        self.scaler = MinMaxScaler((env.observation_space.low, env.observation_space.high), observation_range)
+        self._observation_range = observation_range
+        self.scaler = MinMaxScaler((env.observation_space.low, env.observation_space.high), self._observation_range)
         super().__init__(env)
+
+    @property
+    def config(self) -> dict:
+        """dict: config dict about this enviornment. should be enough to rebuild the env if needed
+        """
+        d = super().info()
+        d.update(observation_range=self.observation_range)
+        return d
 
     def observation_pipeline(self, observation):
         scaled = self.scaler.scale(observation)
