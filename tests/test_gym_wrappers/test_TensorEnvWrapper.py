@@ -29,6 +29,10 @@ class ExpectedEnv(object):
 
 class TensorEnvSuite:
 
+    def test_config(self):
+        config = self.env.config
+        assert config == self.expected.config
+
     def test_name(self):
         assert self.env.name == self.expected.name
 
@@ -60,12 +64,16 @@ class TensorEnvSuite:
 class TestCartPolev1(TensorEnvSuite):
 
     expected = ExpectedEnv('CartPole-v1', action_dims=2, discrete=True)
+    expected.config = {'wrapper': 'torforce.gym_wrappers.wrappers.TensorEnvWrapper',
+                       'name': expected.name}
     env = TensorEnvWrapper(gym.make(expected.name))
 
 
 class TestLunarLanderContinuous(TensorEnvSuite):
 
     expected = ExpectedEnv('LunarLanderContinuous-v2', action_dims=2, discrete=False, action_range=(-1, 1))
+    expected.config = {'wrapper': 'torforce.gym_wrappers.wrappers.TensorEnvWrapper',
+                       'name': expected.name}
     env = TensorEnvWrapper(gym.make(expected.name))
 
 
@@ -74,13 +82,14 @@ class TestScaledObservationWrapper:
     """test scaled observation wrapper on atari ram enviornment"""
 
     expected = ExpectedEnv('Tutankham-ram-v4', action_dims=8, discrete=True)
+    expected.config = {'wrapper': 'torforce.gym_wrappers.wrappers.ScaledObservationWrapper',
+                       'name': expected.name,
+                       'observation_range': (-1, 1)}
     env = ScaledObservationWrapper(gym.make('Tutankham-ram-v4'))
 
     def test_scaled_observation(self):
         print(self.env.current_state)
         assert all(self.env.current_state >= -1)
         assert all(self.env.current_state <= 1)
-
-
 
 
