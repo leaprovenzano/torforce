@@ -1,8 +1,9 @@
 """distributions based off of pytorch.distributions for use with policy models.
 
 """
+import torch
 from functools import partial
-from torch.distributions import Beta
+from torch.distributions import Beta, Categorical
 from torforce.utils import MinMaxScaler
 
 
@@ -50,7 +51,6 @@ class ScaledUnimodalBeta(UnimodalBeta):
        - outputs to the sample method are rescaled from [0, 1] to the specified output range
        - inputs to log_prob are rescaled from the specified output range back to [0,1]
 
-
     Examples:
 
         Usually you will want to create a ScaledUniModalBeta factory from with your output range.
@@ -96,3 +96,21 @@ class ScaledUnimodalBeta(UnimodalBeta):
 
     def log_prob(self, sample, *args, **kwargs):
         return super().log_prob(self._sample_scaler.inverse_scale(sample), *args, **kwargs)
+
+
+class LogitCategorical(Categorical):
+
+    """Categorical distribution from logits by default. 
+    """
+
+    def __init__(self, logits: torch.Tensor):
+        super().__init__(logits=logits)
+
+
+class ProbCategorical(Categorical):
+
+    """Categorical from probabilities default. 
+    """
+
+    def __init__(self, probs: torch.Tensor):
+        super().__init__(probs=probs)

@@ -8,6 +8,7 @@ from hypothesis.extra.numpy import arrays, array_shapes
 from tests.strategies.torchtensors import float_tensors
 
 from torforce.distributions import UnimodalBeta, ScaledUnimodalBeta
+from torforce.distributions import LogitCategorical, ProbCategorical
 
 
 EPS = 1e-5
@@ -58,3 +59,16 @@ class TestScaledUnimodalBeta(TestUnimodalBeta):
 
         unscaled_logprob = unscaled.log_prob((scaled_sample + 1) / 2)
         np.testing.assert_allclose(scaled.log_prob(scaled_sample), unscaled_logprob, atol=EPS)
+
+
+def test_LogitCategorical():
+    inp = torch.log_softmax(torch.tensor([[1., 2., 3.]]), -1)
+    dist = LogitCategorical(inp)
+    torch.testing.assert_allclose(dist.logits, inp)
+
+
+def test_ProbCategorical():
+    inp = torch.softmax(torch.tensor([[1., 2., 3.]]), -1)
+    dist = LogitCategorical(inp)
+    torch.testing.assert_allclose(dist.logits, inp)
+    
