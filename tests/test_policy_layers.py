@@ -64,4 +64,18 @@ class TestCategoricalPolicyLayer(TestDiscretePolicyLayer):
         torch.testing.assert_allclose(dist.probs.sum(dim=-1), 1)
 
 
+class TestLogCategoricalPolicyLayer(TestDiscretePolicyLayer):
+
+    layer_cls = LogCategoricalPolicyLayer
+
+    @given(float_tensors(dtypes='float32',
+                         shape=st.lists(st.integers(1, 10), min_size=2, max_size=2).map(tuple),
+                         unique=True,
+                         elements=st.floats(min_value=-100, max_value=100)))
+    def test_forward(self, inp):
+        layer = self.layer_cls(inp.shape[-1], self.default_action_shape)
+        with torch.no_grad():
+            dist = layer(inp)
+        assert isinstance(dist, torch.distributions.Categorical)
+        torch.testing.assert_allclose(dist.logits.exp().sum(dim=-1), 1)
 

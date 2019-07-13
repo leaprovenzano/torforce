@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.distributions import Categorical
 
-from torforce.distributions import UnimodalBeta, ScaledUnimodalBeta
+from torforce.distributions import UnimodalBeta, ScaledUnimodalBeta, LogCategorical
 
 
 class PolicyLayer(nn.Module):
@@ -161,3 +161,23 @@ class CategoricalPolicyLayer(DiscretePolicyLayer):
         x = self.linear(x)
         x = self.activation(x)
         return (x,)
+
+
+class LogCategoricalPolicyLayer(CategoricalPolicyLayer):
+
+    """Categorical policy layer for discrete action spaces, the same as the CategoricalPolicyLayer but works in logspace.
+
+    Args:
+        in_features (int): the number of input features
+        action_dims (int): the size of the action space
+
+    Attributes:
+        activation (nn.LogSoftmax): log softmax activation.
+        linear (nn.Linear): learnable layer for parameterizing the output distribution.
+    """
+
+    Distribution = LogCategorical
+
+    def __init__(self, in_features: int, action_dims: int):
+        super().__init__(in_features, action_dims)
+        self.activation = nn.LogSoftmax(dim=-1)
