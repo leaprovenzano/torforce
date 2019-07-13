@@ -108,3 +108,4 @@ ENV/
 
 
 *.ipynb
+docs/torforce.*
