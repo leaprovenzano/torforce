@@ -2,6 +2,7 @@ from typing import Iterable, Tuple
 
 import torch
 from torch import nn
+from torch.distributions import Categorical
 
 from torforce.distributions import UnimodalBeta, ScaledUnimodalBeta
 
@@ -125,3 +126,38 @@ class BetaPolicyLayer(ContinuousPolicyLayer):
         a, b = self.alpha(x), self.beta(x)
         a, b = self.activation(a), self.activation(b)
         return a, b
+
+
+class CategoricalPolicyLayer(DiscretePolicyLayer):
+
+    """Categorical policy layer for discrete action spaces.
+
+    Args:
+        in_features (int): the number of input features
+        action_dims (int): the size of the action space
+
+    Attributes:
+        activation (nn.Softmax): the standard softmax activation.
+        linear (nn.Linear): learnable layer for parameterizing the output distribution.
+    """
+
+    Distribution = Categorical
+
+    def __init__(self, in_features: int, action_dims: int):
+        super().__init__(in_features, action_dims)
+        self.linear = self._build_layer()
+        self.activation = nn.Softmax(dim=-1)
+
+    def get_dist_params(self, x: torch.Tensor) -> Tuple[torch.Tensor]:
+        """given an input output a distribution over the action space.
+
+        Args:
+            x (torch.Tensor): input tensor of shape (batch_size, ``self.in_features``)
+
+        Returns:
+            Tuple[torch.Tensor,]: tuple containing single torch tensor of probabilities
+
+        """
+        x = self.linear(x)
+        x = self.activation(x)
+        return (x,)
