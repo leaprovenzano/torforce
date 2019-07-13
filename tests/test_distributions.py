@@ -61,14 +61,3 @@ class TestScaledUnimodalBeta(TestUnimodalBeta):
         np.testing.assert_allclose(scaled.log_prob(scaled_sample), unscaled_logprob, atol=EPS)
 
 
-def test_LogitCategorical():
-    inp = torch.log_softmax(torch.tensor([[1., 2., 3.]]), -1)
-    dist = LogitCategorical(inp)
-    torch.testing.assert_allclose(dist.logits, inp)
-
-
-def test_ProbCategorical():
-    inp = torch.softmax(torch.tensor([[1., 2., 3.]]), -1)
-    dist = LogitCategorical(inp)
-    torch.testing.assert_allclose(dist.logits, inp)
-    
