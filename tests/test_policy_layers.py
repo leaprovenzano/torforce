@@ -35,7 +35,7 @@ class TestBetaPolicyLayer(TestContinuousPolicyLayer):
         assert isinstance(dist, ScaledUnimodalBeta)
 
     def test_init_without_action_range(self):
-        layer = self.layer_cls(self.default_in_features, self.default_action_shape, action_range=(-1, 1))
+        layer = self.layer_cls(self.default_in_features, self.default_action_shape)
         with torch.no_grad():
             dist = layer(torch.rand((1, self.default_in_features)))
         assert isinstance(dist, UnimodalBeta)
