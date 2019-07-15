@@ -1,8 +1,9 @@
 """distributions based off of pytorch.distributions for use with policy models.
 
 """
+import torch
 from functools import partial
-from torch.distributions import Beta
+from torch.distributions import Beta, Categorical, Normal
 from torforce.utils import MinMaxScaler
 
 
@@ -41,6 +42,14 @@ class UnimodalBeta(Beta):
 
     def __init__(self, alpha, beta, validate_args=None):
         super().__init__(alpha + 1, beta + 1, validate_args=validate_args)
+
+    def log_prob(self, sample):
+        p = super().log_prob(sample)
+        return p.sum(-1)
+
+    def entropy(self):
+        ent = super().entropy()
+        return ent.sum(-1)
 
 
 class ScaledUnimodalBeta(UnimodalBeta):
@@ -97,3 +106,10 @@ class ScaledUnimodalBeta(UnimodalBeta):
         return super().log_prob(self._sample_scaler.inverse_scale(sample), *args, **kwargs)
 
 
+class LogCategorical(Categorical):
+
+    """Categorical distribution from logits by default.
+    """
+
+    def __init__(self, logits: torch.Tensor):
+        super().__init__(logits=logits)

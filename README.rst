@@ -30,3 +30,4 @@ Features
 * Custom `UnimodalBeta` and `ScaledBeta` distributions for use in policies with constrained output spaces.
 * `torforce.env_wrappers` for wrapping gym envs in a consistent interface pipelines and state tracking. `TensorEnvWrapper` handles tensor numpy conversion headaches
 * Losses : `ClippedSurrogateLoss`
+* Distribution Policy Layers: Policy Layers for learn a output a distribution over an action space (given some features)
