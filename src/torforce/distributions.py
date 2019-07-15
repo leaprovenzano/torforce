@@ -7,8 +7,6 @@ from torch.distributions import Beta, Categorical, Normal
 from torforce.utils import MinMaxScaler
 
 
-
-
 class UnimodalBeta(Beta):
 
     """Adjusted Beta(α + 1, β + 1) which when used along with softplus activation
@@ -52,6 +50,7 @@ class UnimodalBeta(Beta):
     def entropy(self):
         ent = super().entropy()
         return ent.sum(-1)
+
 
 class ScaledUnimodalBeta(UnimodalBeta):
 
