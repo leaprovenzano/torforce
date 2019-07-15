@@ -3,8 +3,10 @@
 """
 import torch
 from functools import partial
-from torch.distributions import Beta, Categorical
+from torch.distributions import Beta, Categorical, Normal
 from torforce.utils import MinMaxScaler
+
+
 
 
 class UnimodalBeta(Beta):
@@ -43,6 +45,13 @@ class UnimodalBeta(Beta):
     def __init__(self, alpha, beta, validate_args=None):
         super().__init__(alpha + 1, beta + 1, validate_args=validate_args)
 
+    def log_prob(self, sample):
+        p = super().log_prob(sample)
+        return p.sum(-1)
+
+    def entropy(self):
+        ent = super().entropy()
+        return ent.sum(-1)
 
 class ScaledUnimodalBeta(UnimodalBeta):
 

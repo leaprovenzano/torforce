@@ -1,13 +1,18 @@
+"""Policy Layers for learn a output a distribution over an action space (given some features).
+
+Policy layers are simple output layers and generally only contain a single set of learnable weights and shold be the last layer in a policy network.
+This module contiains layers for both discrete and continious action spaces.
+"""
 from typing import Iterable, Tuple
 
 import torch
 from torch import nn
-from torch.distributions import Categorical
+from torch.distributions import Categorical, MultivariateNormal
 
 from torforce.distributions import UnimodalBeta, ScaledUnimodalBeta, LogCategorical
 
 
-class PolicyLayer(nn.Module):
+class DistributionPolicyLayer(nn.Module):
 
     """base for all PolicyLayers. Not for use on it's own.
 
@@ -40,7 +45,7 @@ class PolicyLayer(nn.Module):
         return self.Distribution(*self.get_dist_params(x))
 
 
-class ContinuousPolicyLayer(PolicyLayer):
+class ContinuousDistributionPolicyLayer(DistributionPolicyLayer):
 
     """Base class for continious policies.
     """
@@ -48,15 +53,7 @@ class ContinuousPolicyLayer(PolicyLayer):
     discrete = False
 
 
-class DiscretePolicyLayer(PolicyLayer):
-
-    """Base class for discrete policy layers
-    """
-
-    discrete = True
-
-
-class BetaPolicyLayer(ContinuousPolicyLayer):
+class BetaPolicyLayer(ContinuousDistributionPolicyLayer):
 
     """Policy layer which outputs one of the UnimodalBeta distributions.
 
@@ -127,8 +124,51 @@ class BetaPolicyLayer(ContinuousPolicyLayer):
         a, b = self.activation(a), self.activation(b)
         return a, b
 
+class GaussianPolicyLayer(ContinuousDistributionPolicyLayer):
 
-class CategoricalPolicyLayer(DiscretePolicyLayer):
+    """gaussian policy layer parameterized by learnable mean and std.
+
+    Args:
+        in_features (int): the number of input features
+        action_dims (int): the size of the action space
+        init_std (float, optional): initial value for std parameter.
+
+    Attributes:
+        linear (nn.Linear): parameterizes the center of the gaussian.
+        log_std (nn.Parameter): learnable parameter for the scale of the gaussian.
+
+    """
+
+    Distribution = MultivariateNormal
+
+    def __init__(self, in_features: int, action_dims: int, init_std=1.):
+        super().__init__(in_features, action_dims)
+        self.linear = self._build_layer()
+        self.log_std = nn.Parameter(torch.log(torch.ones(self.action_dims) * init_std))
+
+    def get_dist_params(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """given an input output a distribution over the action space.
+        
+        Args:
+            x (torch.Tensor): input tensor of shape (batch_size, ``self.in_features``)
+        
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: mean and std to parameterize normal distribution
+        """
+        mean = self.linear(x)
+        cov = torch.eye(self.action_dims) * self.log_std.exp()**2
+        return mean, cov
+
+
+
+class DiscreteDistributionPolicyLayer(DistributionPolicyLayer):
+
+    """Base class for discrete policy layers
+    """
+
+    discrete = True
+
+class CategoricalPolicyLayer(DiscreteDistributionPolicyLayer):
 
     """Categorical policy layer for discrete action spaces.
 

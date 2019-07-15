@@ -4,7 +4,7 @@ from hypothesis import strategies as st
 from hypothesis import given
 
 
-from torforce.policy_layers import *
+from torforce.distribution_policy_layers import *
 from torforce.distributions import ScaledUnimodalBeta, UnimodalBeta
 
 from tests.strategies.torchtensors import float_tensors
@@ -17,7 +17,7 @@ class PolicyLayerBaseSuite(object):
 
 class TestContinuousPolicyLayer(PolicyLayerBaseSuite):
 
-    layer_cls = ContinuousPolicyLayer
+    layer_cls = ContinuousDistributionPolicyLayer
 
     def test_not_discrete(self):
         assert self.layer_cls.discrete == False
@@ -25,7 +25,7 @@ class TestContinuousPolicyLayer(PolicyLayerBaseSuite):
 
 class TestDiscretePolicyLayer(PolicyLayerBaseSuite):
 
-    layer_cls = DiscretePolicyLayer
+    layer_cls = DiscreteDistributionPolicyLayer
 
     def test_discrete(self):
         assert self.layer_cls.discrete == True
