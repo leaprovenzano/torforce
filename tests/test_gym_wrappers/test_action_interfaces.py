@@ -1,29 +1,38 @@
 import numpy as np
 import gym
-import pytest
 import torch
 
+from hypothesis import given
+from hypothesis import strategies as st
+from hypothesis.extra.numpy import arrays
+
+from tests.strategies.torchtensors import float_tensors
 
 from torforce.gym_wrappers.action_interface import ScaledActionInterface
 
-@pytest.fixture(scope='class')
-def bipedalwalker_env():
-    env = gym.make('BipedalWalker-v2')
-    yield env
-    env.close()
 
-
-
-@pytest.mark.usefixtures("bipedalwalker_env")
 class TestScaledActionInterface:
 
+    env = gym.make('BipedalWalker-v2')
 
-    def test_tensor_to_action(self, bipedalwalker_env):
-        interface = ScaledActionInterface(bipedalwalker_env, (0, 1))
-        scaled_action = interface.tensor_to_action(torch.Tensor([.0, .5, 1., 1.]))
-        np.testing.assert_almost_equal(scaled_action, np.array([-1, 0., 1., 1.]))
+    @given(float_tensors(dtypes='float32',
+                         shape=(4,),
+                         unique=True,
+                         elements=st.floats(min_value=0, max_value=1)))
+    def test_tensor_to_action(self, input_tensor):
+        interface = ScaledActionInterface(self.env, (0, 1))
+        scaled_action = interface.tensor_to_action(input_tensor)
+        assert not (scaled_action == np.array(input_tensor, 'float32')).all()
+        assert (scaled_action >= -1).all()
+        assert (scaled_action <= 1).all()
 
-    def test_action_to_tensor(self, bipedalwalker_env):
-        interface = ScaledActionInterface(bipedalwalker_env, (0, 1))
-        scaled_action = interface.action_to_tensor(np.array([-1, 0., 1., 1.]))
-        torch.testing.assert_allclose(scaled_action, torch.Tensor([.0, .5, 1., 1.]))
+    @given(arrays('float32',
+                  shape=(4,),
+                  unique=True,
+                  elements=st.floats(min_value=-1, max_value=1)))
+    def test_action_to_tensor(self, action_array):
+        interface = ScaledActionInterface(self.env, (0, 1))
+        action_tensor = interface.action_to_tensor(action_array)
+        assert not (np.asarray(action_tensor, 'float32') == action_array).all()
+        assert (action_tensor >= 0).all()
+        assert (action_tensor <= 1).all()
