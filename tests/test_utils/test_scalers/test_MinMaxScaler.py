@@ -1,7 +1,7 @@
 import numpy as np
 
-from hypothesis import given
-from hypothesis.strategies import composite, floats, integers, tuples, one_of
+from hypothesis import given, example
+from hypothesis.strategies import composite, floats, integers, tuples, one_of, none
 
 from hypothesis.extra.numpy import arrays, array_shapes
 from tests.strategies.torchtensors import float_tensors
@@ -44,7 +44,8 @@ def valid_min_max_numpy_inp(draw):
 @composite
 def params_as_numpy_arrays(draw):
     floatvals = floats(min_value=.001, max_value=100)
-    a_min = draw(arrays(dtype='float32', shape=array_shapes(min_dims=1, max_dims=1, min_side=2, max_side=100), elements=floats(min_value=-100, max_value=100)))
+    a_min = draw(arrays(dtype='float32', shape=array_shapes(min_dims=1, max_dims=1,
+                 min_side=2, max_side=100), elements=floats(min_value=-100, max_value=100)))
     a_max = a_min + draw(floatvals)
     b_min = draw(arrays(dtype='float', shape=a_min.shape, elements=floats(min_value=-100, max_value=100)))
     b_max = b_min + draw(floatvals)
@@ -72,9 +73,23 @@ class TestMinMaxScaler(object):
         self.assert_reversable(*strat)
 
     @given(valid_min_max_numpy_inp())
+    @example(((-1, 1), (0, 1), np.array([0, 0, 0])))
+    @example(((-1, 1), (0, 1), np.array([-1, -1, -1])))
     def test_nparrays(self, strat):
         self.assert_reversable(*strat)
 
     @given(valid_min_max_tensor_inp())
     def test_tensors(self, strat):
         self.assert_reversable(*strat)
+
+    @given(none())
+    @example(((-1, 1), (0, 1), np.array([0., 0, 0]), np.array([.5, .5, .5])))
+    @example(((-1, 1), (0, 1), np.array([-1, -1, -1.]), np.array([0., 0, 0])))
+    @example(((-1, 1), (0, 1), np.array([-1, 0., 1.]), np.array([0., .5, 1.])))
+    def test_explicit(self, inp):
+        if inp is not None:
+            scalefrom, scaleto, x, expected=inp
+
+            scaler=MinMaxScaler(scalefrom, scaleto)
+            scaled=scaler.scale(x)
+            np.testing.assert_allclose(expected, scaled)
