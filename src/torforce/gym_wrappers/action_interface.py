@@ -22,6 +22,10 @@ class TensorActionInterface:
         self.action_dims = self._get_action_dims(env)
         self.action_range = self._get_action_range(env)
 
+    @property
+    def output_action_range(self):
+        return self.action_range
+
     def _get_action_range(self, env):
         return None
 
@@ -88,7 +92,6 @@ class ContinuiousActionInterface(TensorActionInterface):
         return torch.FloatTensor(x)
 
 
-
 class ScaledActionInterface(ContinuiousActionInterface):
 
     """Interface for continuious action spaces that rescales actions from the range provided to the enviornments range.
@@ -104,19 +107,15 @@ class ScaledActionInterface(ContinuiousActionInterface):
     def __init__(self, env, scaled_action_range: Tuple[float, float]):
         super().__init__(env)
         self.scaled_action_range = scaled_action_range
-        self.scaler = MinMaxScaler(self.action_range, self.scaled_action_range)
+        self.scaler = MinMaxScaler( self.action_range, self.scaled_action_range)
 
-    def _get_action_range(self, env):
-        action_range = env.action_space.low, env.action_space.high
-        if all(map(all_finite, action_range)):
-            return tuple(x[0] if all_equal(x) else x for x in action_range)
-        return None
-
-    def _get_action_dims(self, env):
-        return env.action_space.shape[0]
+    @property
+    def output_action_range(self):
+        return self.scaled_action_range
 
     def tensor_to_action(self, x: torch.FloatTensor) -> np.ndarray:
-        return self.scaler.inverse_scale(np.asarray(x))
+        return self.scaler(np.asarray(x))
 
     def action_to_tensor(self, x: np.ndarray) -> torch.FloatTensor:
-        return torch.FloatTensor(self.scaler.scale(x))
+        return torch.FloatTensor(self.scaler.inverse_scale(x))
+
