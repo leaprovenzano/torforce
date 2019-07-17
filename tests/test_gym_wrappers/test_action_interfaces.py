@@ -16,10 +16,10 @@ class TestScaledActionInterface:
     interface = ScaledActionInterface(gym.make('BipedalWalker-v2'), scaled_action_range=(0, 1))
 
     def test_output_action_range(self):
-        assert self.interface.output_action_range == (0, 1)
+        assert self.interface.action_range == (0, 1)
 
     def test_action_range(self):
-        assert self.interface.action_range == (-1, 1)
+        assert self.interface._internal_action_range == (-1, 1)
 
     @given(float_tensors(dtypes='float32',
                          shape=(4,),

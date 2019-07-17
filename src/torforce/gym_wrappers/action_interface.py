@@ -22,10 +22,6 @@ class TensorActionInterface:
         self.action_dims = self._get_action_dims(env)
         self.action_range = self._get_action_range(env)
 
-    @property
-    def output_action_range(self):
-        return self.action_range
-
     def _get_action_range(self, env):
         return None
 
@@ -96,6 +92,8 @@ class ScaledActionInterface(ContinuiousActionInterface):
 
     """Interface for continuious action spaces that rescales actions from the range provided to the enviornments range.
 
+    This interface is useful when a policy outputs actions in a range different from the enviornment.
+
     Attributes:
         action_dims (int): dimensions of action space. This will generally corespond with action output layers in RL
             models.
@@ -106,12 +104,10 @@ class ScaledActionInterface(ContinuiousActionInterface):
 
     def __init__(self, env, scaled_action_range: Tuple[float, float]):
         super().__init__(env)
+        self._internal_action_range = self._get_action_range(env)
         self.scaled_action_range = scaled_action_range
-        self.scaler = MinMaxScaler( self.action_range, self.scaled_action_range)
-
-    @property
-    def output_action_range(self):
-        return self.scaled_action_range
+        self.action_range = scaled_action_range
+        self.scaler = MinMaxScaler( self._internal_action_range, self.scaled_action_range)
 
     def tensor_to_action(self, x: torch.FloatTensor) -> np.ndarray:
         return self.scaler(np.asarray(x))
