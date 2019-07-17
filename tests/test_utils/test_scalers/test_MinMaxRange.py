@@ -6,19 +6,11 @@ from hypothesis import given
 from hypothesis.strategies import integers, floats, composite
 from hypothesis.extra.numpy import arrays, array_shapes
 
-from torforce.utils.descriptors import MinMaxRange
+from torforce.utils.scalers import MinMaxRange
 
 basic_arrays = arrays(dtype='float',
                       shape=array_shapes(min_dims=1, max_dims=3, min_side=2, max_side=10),
                       elements=floats(min_value=-1000, max_value=1000))
-
-
-class DummyDescriptorHolder(object):
-
-    rng = MinMaxRange()
-
-    def __init__(self, low, high):
-        self.rng = (low, high)
 
 
 @composite
@@ -50,13 +42,13 @@ class TestMinMaxRange(object):
 
     def assert_raises_value_error(self, low, high):
         with pytest.raises(ValueError):
-            DummyDescriptorHolder(low, high)
+            MinMaxRange(low, high)
 
     def assert_valid(self, low, high):
-        holder = DummyDescriptorHolder(low, high)
-        assert np.all(holder.rng.low == low)
-        assert np.all(holder.rng.high == high)
-        assert np.all(holder.rng.span == high - low)
+        rng = MinMaxRange(low, high)
+        assert np.all(rng.low == low)
+        assert np.all(rng.high == high)
+        assert np.all(rng.span == high - low)
 
     @given(valid_high_low_arrays(MinMaxRange.EPSILON))
     def test_valid_arrays_pass(self, rng):

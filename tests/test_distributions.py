@@ -8,7 +8,7 @@ from hypothesis.strategies import composite, floats
 from hypothesis.extra.numpy import arrays, array_shapes
 from tests.strategies.torchtensors import float_tensors, variable_batch_shape
 
-from torforce.distributions import UnimodalBeta, ScaledUnimodalBeta, LogCategorical
+from torforce.distributions import UnimodalBeta, LogCategorical
 
 
 EPS = 1e-5
@@ -31,36 +31,6 @@ class TestUnimodalBeta(object):
         dist = UnimodalBeta(alpha, beta)
         np.testing.assert_array_equal(dist.concentration0 >= 1, 1)
         np.testing.assert_array_equal(dist.concentration1 >= 1, 1)
-
-
-class TestScaledUnimodalBeta(TestUnimodalBeta):
-
-    def test_from_init_fromrange(self):
-        dist_partial = ScaledUnimodalBeta.from_range((-1, 1))
-        dist = dist_partial(torch.rand(10), torch.rand(10))
-        assert isinstance(dist, ScaledUnimodalBeta)
-        assert dist._sample_scaler.inrange.min == 0
-        assert dist._sample_scaler.inrange.max == 1
-        assert dist._sample_scaler.outrange.min == -1
-        assert dist._sample_scaler.outrange.max == 1
-
-    @given(alpha_beta())
-    def test_scaled_behavior(self, params):
-
-        mn, mx = -1, 1
-        alpha, beta = params
-
-        unscaled = UnimodalBeta(alpha, beta)
-        scaled = ScaledUnimodalBeta((mn, mx), alpha, beta)
-
-        scaled_sample = scaled.sample()
-
-        np.testing.assert_array_equal(scaled_sample <= 1, 1)
-        np.testing.assert_array_equal(scaled_sample >= -1, 1)
-
-        unscaled_logprob = unscaled.log_prob((scaled_sample + 1) / 2)
-        np.testing.assert_allclose(scaled.log_prob(scaled_sample), unscaled_logprob, atol=EPS)
-
 
 @given(float_tensors(dtypes='float32',
                      shape=st.lists(st.integers(1, 10), min_size=2, max_size=2).map(tuple),

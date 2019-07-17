@@ -9,7 +9,7 @@ import torch
 from torch import nn
 from torch.distributions import Categorical, MultivariateNormal
 
-from torforce.distributions import UnimodalBeta, ScaledUnimodalBeta, LogCategorical
+from torforce.distributions import UnimodalBeta, LogCategorical
 
 
 class DistributionPolicyLayer(nn.Module):
@@ -55,13 +55,11 @@ class ContinuousDistributionPolicyLayer(DistributionPolicyLayer):
 
 class BetaPolicyLayer(ContinuousDistributionPolicyLayer):
 
-    """Policy layer which outputs one of the UnimodalBeta distributions.
+    """Policy layer which outputs the UnimodalBeta distribution.
 
     Args:
         in_features (int): the number of input features
         action_dims (int): the size of the action space
-        action_range (tuple, optional): if provided use a the `ScaledUnimodalBeta` distribution. Useful for bounded
-            action spaces in ranges other than (0, 1).
 
     Attributes:
         activation (nn.Softplus): softplus activation
@@ -72,40 +70,35 @@ class BetaPolicyLayer(ContinuousDistributionPolicyLayer):
     Example:
 
         Build a ``BipedalWalker`` gym. ``BipedalWalker`` has a bounded continious action space in range ``(-1, 1)`` so
-        it's a good usecase for a `BetaPolicyLayer` which will output a scaled beta distribution over the action space.
+        and the Beta distribution has an output range of (0, 1) so we initilize the env with that action range so that
+        actions will be rescaled on the enviorment level ( away from gradient computation etc...).
+        Envs with a bounded action space are a good usecase for a `BetaPolicyLayer` since the beta distribution is bounded.
 
         >>> import gym
         >>> import torch
         >>> from torforce.gym_wrappers import TensorEnvWrapper
         >>> 
-        >>> env = TensorEnvWrapper(gym.make('BipedalWalker-v2'))
+        >>> env = TensorEnvWrapper(gym.make('BipedalWalker-v2'), action_range=(0., 1.))
         >>> env.action_range, env.observation_space.shape[0],  env.action_dims
-        (-1.0, 1.0), 24, 4
+        (.0, 1.0), 24, 4
 
         Next we'll create a simple ``BetaPolicyLayer`` that just takes observations directly, in practice you will
         probably want to include more hidden layers and use ``BetaPolicyLayer`` as an output layer.
 
         >>> from torforce.policy.layers import BetaPolicyLayer
         >>> 
-        >>> policy = BetaPolicyLayer(env.observation_space.shape[0], env.action_dims, action_range=env.action_range)
-
-        calling out policy will output a distribution over the action space per state, in this case it will be a
-        ``ScaledUnimodalBeta`` since our action range is ``(-1.0, 1.0)``.
+        >>> policy = BetaPolicyLayer(env.observation_space.shape[0], env.action_dims)
 
         >>> dist = policy(env.current_state.unsqueeze(0))
-        ScaledUnimodalBeta()
+        UnimodalBeta()
 
     """
 
     Distribution = UnimodalBeta
     action_range = (0, 1)
 
-    def __init__(self, in_features: int, action_dims: int, action_range=(0, 1)):
+    def __init__(self, in_features: int, action_dims: int):
         super().__init__(in_features, action_dims)
-        if action_range != self.action_range:
-            self.Distribution = ScaledUnimodalBeta.from_range(action_range)
-            self.action_range = action_range
-
         self.alpha = self._build_layer()
         self.beta = self._build_layer()
         self.activation = nn.Softplus()
