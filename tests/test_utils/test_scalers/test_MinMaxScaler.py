@@ -8,6 +8,14 @@ from tests.strategies.torchtensors import float_tensors
 
 from torforce.utils.scalers import MinMaxScaler
 
+def test_idempotent():
+    scaler_a = MinMaxScaler((0, 1), (-1, 1))
+    scaler_b = MinMaxScaler((-1, 1), (0, 1))
+    assert scaler_a.inrange == (0, 1)
+    assert scaler_a.outrange == (-1, 1)
+    assert scaler_b.inrange == (-1, 1)
+    assert scaler_b.outrange == (0, 1)
+
 
 @composite
 def valid_min_max_tensor_inp(draw):

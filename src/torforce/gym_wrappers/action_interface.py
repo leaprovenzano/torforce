@@ -106,12 +106,12 @@ class ScaledActionInterface(ContinuiousActionInterface):
         super().__init__(env)
         self._internal_action_range = self._get_action_range(env)
         self.scaled_action_range = scaled_action_range
-        self.action_range = scaled_action_range
         self.scaler = MinMaxScaler(self._internal_action_range, self.scaled_action_range)
+        self.action_range = scaled_action_range
 
     def tensor_to_action(self, x: torch.FloatTensor) -> np.ndarray:
-        return self.scaler(super().tensor_to_action(x))
+        return self.scaler.inverse_scale(super().tensor_to_action(x))
 
     def action_to_tensor(self, x: np.ndarray) -> torch.FloatTensor:
-        return super().action_to_tensor(self.scaler.inverse_scale(x))
+        return super().action_to_tensor(self.scaler(x))
 
