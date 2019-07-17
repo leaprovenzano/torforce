@@ -1,4 +1,4 @@
-from typing import Union, Iterable
+from typing import Union, Iterable, Tuple
 import numpy as np
 import torch
 
@@ -86,3 +86,32 @@ class ContinuiousActionInterface(TensorActionInterface):
 
     def action_to_tensor(self, x: np.ndarray) -> torch.FloatTensor:
         return torch.FloatTensor(x)
+
+
+class ScaledActionInterface(ContinuiousActionInterface):
+
+    """Interface for continuious action spaces that rescales actions from the range provided to the enviornments range.
+
+    This interface is useful when a policy outputs actions in a range different from the enviornment.
+
+    Attributes:
+        action_dims (int): dimensions of action space. This will generally corespond with action output layers in RL
+            models.
+        action_range (tuple | None): if the action space is finite and bounded this will be the min and max bounds
+            of that action space, in the case that any features of the action space are not finite it will be None.
+        scaled_action_range (Tuple[float, float]): scale incoming actions from this range to the enviornments range
+    """
+
+    def __init__(self, env, scaled_action_range: Tuple[float, float]):
+        super().__init__(env)
+        self._internal_action_range = self._get_action_range(env)
+        self.scaled_action_range = scaled_action_range
+        self.action_range = scaled_action_range
+        self.scaler = MinMaxScaler(self._internal_action_range, self.scaled_action_range)
+
+    def tensor_to_action(self, x: torch.FloatTensor) -> np.ndarray:
+        return self.scaler(super().tensor_to_action(x))
+
+    def action_to_tensor(self, x: np.ndarray) -> torch.FloatTensor:
+        return super().action_to_tensor(self.scaler.inverse_scale(x))
+

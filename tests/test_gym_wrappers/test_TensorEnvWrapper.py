@@ -77,6 +77,15 @@ class TestLunarLanderContinuous(TensorEnvSuite):
     env = TensorEnvWrapper(gym.make(expected.name))
 
 
+class TestLunarLanderContinuousRescaledAction(TestLunarLanderContinuous):
+
+    expected = ExpectedEnv('LunarLanderContinuous-v2', action_dims=2, discrete=False, action_range=(0., 1.))
+    expected.config = {'wrapper': 'torforce.gym_wrappers.wrappers.TensorEnvWrapper',
+                       'name': expected.name,
+                       }
+    env = TensorEnvWrapper(gym.make(expected.name), action_range=(0., 1.))
+
+
 class TestScaledObservationWrapper:
 
     """test scaled observation wrapper on atari ram enviornment"""
@@ -91,5 +100,3 @@ class TestScaledObservationWrapper:
         print(self.env.current_state)
         assert all(self.env.current_state >= -1)
         assert all(self.env.current_state <= 1)
-
-

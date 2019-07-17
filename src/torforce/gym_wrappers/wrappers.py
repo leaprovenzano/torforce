@@ -1,11 +1,13 @@
+
+from typing import Union, Iterable, Tuple
+
 import functools
-from typing import Union, Iterable
 import gym
 import numpy as np
 import torch
 
 from torforce.utils import MinMaxScaler
-from .action_interface import ContinuiousActionInterface, DiscreteActionInterface
+from .action_interface import ContinuiousActionInterface, DiscreteActionInterface, ScaledActionInterface
 
 
 class StepInTerminalStateError(Exception):
@@ -155,15 +157,19 @@ class TensorEnvWrapper(StatefulWrapper):
 
     Args:
         env (gym.Env): gym enviornment to wrap the raw env can be accessed directly from the wrapper at the `env` attr.
+        action_range (Tuple[float, float], optional): if provided action interface will be an instance of `ScaledActionInterface`
+            and will rescale output actions to the range provided ( invalid for discrete action spaces obviously )
     """
 
-    def __init__(self, env):
+    def __init__(self, env, action_range: Tuple[float, float]=None):
         super(TensorEnvWrapper, self).__init__(env)
-
         if self.discrete:
             self._action_interface = DiscreteActionInterface(self)
         else:
-            self._action_interface = ContinuiousActionInterface(self)
+            if action_range is not None:
+                self._action_interface = ScaledActionInterface(self, scaled_action_range=action_range)
+            else:
+                self._action_interface = ContinuiousActionInterface(self)
 
         self.action_space.sample = self._sample_wrapper(self.action_space.sample)
 
@@ -226,10 +232,10 @@ class ScaledObservationWrapper(TensorEnvWrapper):
         observation_range (tuple, optional): tuple representing new min and max values for rescaled observations.
     """
 
-    def __init__(self, env, observation_range=(-1, 1)):
+    def __init__(self, env, observation_range=(-1, 1), *args, **kwargs):
         self._observation_range = observation_range
         self.scaler = MinMaxScaler((env.observation_space.low, env.observation_space.high), self._observation_range)
-        super().__init__(env)
+        super().__init__(env, *args, **kwargs)
 
     @property
     def config(self) -> dict:
