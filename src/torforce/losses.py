@@ -45,7 +45,7 @@ class ClippedSurrogateLoss(nn.Module):
         Returns:
             torch.Tensor
         """
-        new_logprob = dist.logprob(action)
+        new_logprob = dist.log_prob(action)
         ratio = torch.exp(new_logprob - old_logprob)
         unclipped = ratio * advantage
         clipped = torch.clamp(ratio, 1.0 - self.clip, 1.0 + self.clip) * advantage

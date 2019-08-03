@@ -1,4 +1,4 @@
-"""Policy Layers for learn a output a distribution over an action space (given some features).
+"""Distribution Layers for are learn a.
 
 Policy layers are simple output layers and generally only contain a single set of learnable weights and shold be the last layer in a policy network.
 This module contiains layers for both discrete and continious action spaces.
@@ -7,14 +7,14 @@ from typing import Iterable, Tuple
 
 import torch
 from torch import nn
-from torch.distributions import Categorical, MultivariateNormal
+from torch.distributions import Categorical, Normal
 
 from torforce.distributions import UnimodalBeta, LogCategorical
 
 
-class DistributionPolicyLayer(nn.Module):
+class DistributionLayer(nn.Module):
 
-    """base for all PolicyLayers. Not for use on it's own.
+    """base for all DistributionLayers. Not for use on it's own.
 
     Args:
         in_features (int): the number of input features
@@ -45,15 +45,15 @@ class DistributionPolicyLayer(nn.Module):
         return self.Distribution(*self.get_dist_params(x))
 
 
-class ContinuousDistributionPolicyLayer(DistributionPolicyLayer):
+class ContinuousDistributionLayer(DistributionLayer):
 
-    """Base class for continious policies.
+    """Base class for continious distribution layers.
     """
 
     discrete = False
 
 
-class BetaPolicyLayer(ContinuousDistributionPolicyLayer):
+class UnimodalBetaLayer(ContinuousDistributionLayer):
 
     """Policy layer which outputs the UnimodalBeta distribution.
 
@@ -82,7 +82,7 @@ class BetaPolicyLayer(ContinuousDistributionPolicyLayer):
         >>> env.action_range, env.observation_space.shape[0],  env.action_dims
         (.0, 1.0), 24, 4
 
-        Next we'll create a simple ``BetaPolicyLayer`` that just takes observations directly, in practice you will
+        Next we'll create a simple ``UnimodalBetaLayer`` that just takes observations directly, in practice you will
         probably want to include more hidden layers and use ``BetaPolicyLayer`` as an output layer.
 
         >>> from torforce.policy.layers import BetaPolicyLayer
@@ -117,7 +117,7 @@ class BetaPolicyLayer(ContinuousDistributionPolicyLayer):
         a, b = self.activation(a), self.activation(b)
         return a, b
 
-class GaussianPolicyLayer(ContinuousDistributionPolicyLayer):
+class GaussianLayer(ContinuousDistributionLayer):
 
     """gaussian policy layer parameterized by learnable mean and std.
 
@@ -132,7 +132,7 @@ class GaussianPolicyLayer(ContinuousDistributionPolicyLayer):
 
     """
 
-    Distribution = MultivariateNormal
+    Distribution = Normal
 
     def __init__(self, in_features: int, action_dims: int, init_std=1.):
         super().__init__(in_features, action_dims)
@@ -149,19 +149,19 @@ class GaussianPolicyLayer(ContinuousDistributionPolicyLayer):
             Tuple[torch.Tensor, torch.Tensor]: mean and std to parameterize normal distribution
         """
         mean = self.linear(x)
-        cov = torch.eye(self.action_dims) * self.log_std.exp()**2
-        return mean, cov
+        std = self.exp(self.log_std).expand_as(mean)
+        return mean, std
 
 
 
-class DiscreteDistributionPolicyLayer(DistributionPolicyLayer):
+class DiscreteDistributionLayer(DistributionLayer):
 
     """Base class for discrete policy layers
     """
 
     discrete = True
 
-class CategoricalPolicyLayer(DiscreteDistributionPolicyLayer):
+class CategoricalLayer(DiscreteDistributionLayer):
 
     """Categorical policy layer for discrete action spaces.
 
@@ -196,7 +196,7 @@ class CategoricalPolicyLayer(DiscreteDistributionPolicyLayer):
         return (x,)
 
 
-class LogCategoricalPolicyLayer(CategoricalPolicyLayer):
+class LogCategoricalLayer(CategoricalLayer):
 
     """Categorical policy layer for discrete action spaces, the same as the CategoricalPolicyLayer but works in logspace.
 
