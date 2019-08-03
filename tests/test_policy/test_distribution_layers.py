@@ -5,7 +5,7 @@ from hypothesis import given
 
 
 from torforce.policy.distribution_layers import *
-from torforce.distributions import ScaledUnimodalBeta, UnimodalBeta
+from torforce.distributions import UnimodalBeta
 
 from tests.strategies.torchtensors import float_tensors
 
@@ -15,25 +15,25 @@ class PolicyLayerBaseSuite(object):
     default_action_shape = 4
 
 
-class TestContinuousPolicyLayer(PolicyLayerBaseSuite):
+class TestContinuousLayer(PolicyLayerBaseSuite):
 
-    layer_cls = ContinuousDistributionPolicyLayer
+    layer_cls = ContinuousDistributionLayer
 
     def test_not_discrete(self):
         assert self.layer_cls.discrete == False
 
 
-class TestDiscretePolicyLayer(PolicyLayerBaseSuite):
+class TestDiscreteLayer(PolicyLayerBaseSuite):
 
-    layer_cls = DiscreteDistributionPolicyLayer
+    layer_cls = DiscreteDistributionLayer
 
     def test_discrete(self):
         assert self.layer_cls.discrete == True
 
 
-class TestBetaPolicyLayer(TestContinuousPolicyLayer):
+class TestBetaLayer(TestContinuousLayer):
 
-    layer_cls = BetaPolicyLayer
+    layer_cls = UnimodalBetaLayer
 
     def test_init_without_action_range(self):
         layer = self.layer_cls(self.default_in_features, self.default_action_shape)
@@ -42,9 +42,9 @@ class TestBetaPolicyLayer(TestContinuousPolicyLayer):
         assert isinstance(dist, UnimodalBeta)
 
 
-class TestCategoricalPolicyLayer(TestDiscretePolicyLayer):
+class TestCategoricalPolicyLayer(TestDiscreteLayer):
 
-    layer_cls = CategoricalPolicyLayer
+    layer_cls = CategoricalLayer
 
     @given(float_tensors(dtypes='float32',
                          shape=st.lists(st.integers(1, 10), min_size=2, max_size=2).map(tuple),
@@ -58,9 +58,9 @@ class TestCategoricalPolicyLayer(TestDiscretePolicyLayer):
         torch.testing.assert_allclose(dist.probs.sum(dim=-1), 1)
 
 
-class TestLogCategoricalPolicyLayer(TestDiscretePolicyLayer):
+class TestLogCategoricalLayer(TestDiscreteLayer):
 
-    layer_cls = LogCategoricalPolicyLayer
+    layer_cls = LogCategoricalLayer
 
     @given(float_tensors(dtypes='float32',
                          shape=st.lists(st.integers(1, 10), min_size=2, max_size=2).map(tuple),
