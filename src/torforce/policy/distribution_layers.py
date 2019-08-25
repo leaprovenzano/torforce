@@ -77,7 +77,7 @@ class UnimodalBetaLayer(ContinuousDistributionLayer):
         >>> import gym
         >>> import torch
         >>> from torforce.gym_wrappers import TensorEnvWrapper
-        >>> 
+        >>>
         >>> env = TensorEnvWrapper(gym.make('BipedalWalker-v2'), action_range=(0., 1.))
         >>> env.action_range, env.observation_space.shape[0],  env.action_dims
         (.0, 1.0), 24, 4
@@ -85,9 +85,9 @@ class UnimodalBetaLayer(ContinuousDistributionLayer):
         Next we'll create a simple ``UnimodalBetaLayer`` that just takes observations directly, in practice you will
         probably want to include more hidden layers and use ``BetaPolicyLayer`` as an output layer.
 
-        >>> from torforce.policy.layers import BetaPolicyLayer
-        >>> 
-        >>> policy = BetaPolicyLayer(env.observation_space.shape[0], env.action_dims)
+        >>> from torforce.policy.layers import UnimodalBetaLayer
+        >>>
+        >>> policy = UnimodalBetaLayer(env.observation_space.shape[0], env.action_dims)
 
         >>> dist = policy(env.current_state.unsqueeze(0))
         UnimodalBeta()
@@ -141,10 +141,10 @@ class GaussianLayer(ContinuousDistributionLayer):
 
     def get_dist_params(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """given an input output a distribution over the action space.
-        
+
         Args:
             x (torch.Tensor): input tensor of shape (batch_size, ``self.in_features``)
-        
+
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: mean and std to parameterize normal distribution
         """
