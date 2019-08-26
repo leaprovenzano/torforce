@@ -19,17 +19,29 @@ def dypes(dtype_strings):
     return sampled_from(list(dtype_strings))
 
 
-def tensors(dtypes, *args, **kwargs):
+def tensors(dtypes, shape=None, min_dims=1, max_dims=None, min_side=1, max_side=None, *args, **kwargs):
     try:
         dtypes.validate()
     except AttributeError:
         if isinstance(dtypes, str):
-            return tensors(just(dtypes), *args, **kwargs)
+            return tensors(just(dtypes),
+                           shape=shape,
+                           min_dims=min_dims,
+                           max_dims=max_dims,
+                           min_side=min_side,
+                           max_side=max_side,
+                           *args,
+                           **kwargs)
         elif type(dtypes) in (list, tuple):
             return tensors(sampled_from())
         else:
             raise ValueError('dtype : {} not understood ... please provide a list or tuple of type strings or a stategy')
-    arrs = arrays(dtypes, *args, **kwargs)
+
+    if shape is None:
+        shape = array_shapes(min_dims=min_dims, max_dims=max_dims, min_side=min_side, max_side=max_side)
+
+    arrs = arrays(dtypes, shape=shape, *args, **kwargs)
+
     return arrs.map(torch.as_tensor)
 
 

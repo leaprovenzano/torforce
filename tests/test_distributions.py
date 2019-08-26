@@ -16,11 +16,12 @@ EPS = 1e-5
 
 @composite
 def alpha_beta(draw):
-    alpha = draw(float_tensors(dtypes='float32', shape=array_shapes(min_dims=1, max_dims=2, min_side=2, max_side=10),
-                               unique=True, elements=floats(min_value=0.0000001, max_value=100)))
-    beta = draw(float_tensors(dtypes='float32', shape=alpha.shape,
-                              unique=True, elements=floats(min_value=0, max_value=100)))
-    return alpha, beta
+    shape = draw(array_shapes(min_dims=2, max_dims=2, min_side=2, max_side=10))
+    tensors = float_tensors(dtypes='float32', shape=shape,
+                               unique=True, elements=floats(min_value=0.0000001, max_value=100))
+
+    return draw(tensors), draw(tensors)
+
 
 
 class TestUnimodalBeta(object):
