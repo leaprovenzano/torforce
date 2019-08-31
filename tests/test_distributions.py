@@ -17,8 +17,8 @@ EPS = 1e-5
 @composite
 def alpha_beta(draw):
     shape = draw(array_shapes(min_dims=2, max_dims=2, min_side=2, max_side=10))
-    tensors = float_tensors(dtypes='float32', shape=shape,
-                            unique=True, elements=floats(min_value=9.999999747378752e-06, max_value=100, width=32))
+    tensors = float_tensors(dtypes='float', shape=shape,
+                            unique=True, elements=floats(min_value=9.999999747378752e-06, max_value=100))
 
     return draw(tensors), draw(tensors)
 
@@ -33,10 +33,10 @@ class TestUnimodalBeta(object):
         np.testing.assert_array_equal(dist.concentration1 >= 1, 1)
 
 
-@given(float_tensors(dtypes='float32',
+@given(float_tensors(dtypes='float',
                      shape=st.lists(st.integers(1, 10), min_size=2, max_size=2).map(tuple),
                      unique=True,
-                     elements=floats(min_value=-100, max_value=100, width=32)))
+                     elements=floats(min_value=-100, max_value=100)))
 def test_LogitCategorical(x):
     inp = torch.log_softmax(x, -1)
     dist = LogCategorical(inp)
