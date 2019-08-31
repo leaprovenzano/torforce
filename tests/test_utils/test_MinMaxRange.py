@@ -55,9 +55,7 @@ class TestMinMaxRange(object):
         low, high = rng
         self.assert_valid(low, high)
 
-    @given(arrays(dtype='float',
-                  shape=array_shapes(min_dims=1, max_dims=3, min_side=2, max_side=10),
-                  elements=floats(min_value=-1000, max_value=1000)))
+    @given(basic_arrays)
     def test_arr_and_scaler(self, arr):
         self.assert_valid(arr, arr.max() + 1)
         self.assert_valid(arr.min() - 1, arr)
@@ -68,8 +66,7 @@ class TestMinMaxRange(object):
         self.assert_raises_value_error(low, high)
 
     @given(low_gte_high(
-        (floats(min_value=-100, max_value=100, width=32) | integers(min_value=-100, max_value=100) | basic_arrays)))
+        (floats(min_value=-100, max_value=100) | integers(min_value=-100, max_value=100) | basic_arrays)))
     def test_low_values_gte_high_are_invalidated(self, rng):
         low, high = rng
         self.assert_raises_value_error(low, high)
-#

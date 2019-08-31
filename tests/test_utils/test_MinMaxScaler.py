@@ -1,5 +1,7 @@
 import numpy as np
 
+import torch
+
 from hypothesis import given, example
 from hypothesis.strategies import composite, floats, integers, tuples, one_of, none
 
@@ -17,21 +19,6 @@ def test_idempotent():
     assert scaler_b.outrange == (0, 1)
 
 
-@composite
-def valid_min_max_tensor_inp(draw):
-    floatvals = floats(min_value=-100, max_value=100)
-    a_min = draw(floatvals)
-    a_max = draw(floats(min_value=a_min + 1, max_value=a_min + 100))
-    b_min = draw(floatvals)
-    b_max = draw(floats(min_value=b_min + 1, max_value=b_min + 100))
-
-    scaleto = (a_min, a_max)
-    scalefrom = (b_min, b_max)
-
-    inp = draw(float_tensors(shape=array_shapes(min_dims=1, max_dims=3, min_side=2, max_side=10),
-                             unique=True, elements=floats(min_value=b_min, max_value=b_max)))
-    return scalefrom, scaleto, inp
-
 
 @composite
 def valid_min_max_numpy_inp(draw):
@@ -48,14 +35,21 @@ def valid_min_max_numpy_inp(draw):
                       unique=True, elements=floats(min_value=b_min, max_value=b_max)))
     return scalefrom, scaleto, inp
 
+@composite
+def valid_min_max_tensor_inp(draw):
+    scalefrom, scaleto, inp = draw(valid_min_max_numpy_inp())
+    inp = torch.as_tensor(inp)
+    return scalefrom, scaleto, inp
+    
+
 
 @composite
 def params_as_numpy_arrays(draw):
     floatvals = floats(min_value=.001, max_value=100)
     a_min = draw(arrays(dtype='float32', shape=array_shapes(min_dims=1, max_dims=1,
-                 min_side=2, max_side=100), elements=floats(min_value=-100, max_value=100)))
+                 min_side=2, max_side=100), elements=floats(min_value=-100, max_value=100, width=32)))
     a_max = a_min + draw(floatvals)
-    b_min = draw(arrays(dtype='float', shape=a_min.shape, elements=floats(min_value=-100, max_value=100)))
+    b_min = draw(arrays(dtype='float', shape=a_min.shape, elements=floats(min_value=-100, max_value=100, width=32)))
     b_max = b_min + draw(floatvals)
 
     scaleto = (a_min, a_max)
