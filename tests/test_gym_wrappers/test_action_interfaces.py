@@ -24,7 +24,7 @@ class TestScaledActionInterface:
     @given(float_tensors(dtypes='float32',
                          shape=(4,),
                          unique=True,
-                         elements=st.floats(min_value=0, max_value=1)))
+                         elements=st.floats(min_value=0, max_value=1, width=32)))
     def test_tensor_to_action(self, input_tensor):
         scaled_action = self.interface.tensor_to_action(input_tensor)
         assert not (scaled_action == np.array(input_tensor, 'float32')).all()
@@ -34,7 +34,7 @@ class TestScaledActionInterface:
     @given(arrays('float32',
                   shape=(4,),
                   unique=True,
-                  elements=st.floats(min_value=-1, max_value=1)))
+                  elements=st.floats(min_value=-1, max_value=1, width=32)))
     def test_action_to_tensor(self, action_array):
         action_tensor = self.interface.action_to_tensor(action_array)
         print('action_array:', action_array)
