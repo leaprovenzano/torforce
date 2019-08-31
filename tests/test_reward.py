@@ -28,10 +28,8 @@ def group_split(x, mask, return_mask=False):
             max_grp = g.max() + 1
 
     if return_mask:
-        return  [(x[groups==i], mask[groups==i]) for i in range(groups.min(), groups.max()+1)]
-    return [x[groups==i] for i in range(groups.min(), groups.max()+1)]
-        
-
+        return [(x[groups == i], mask[groups == i]) for i in range(groups.min(), groups.max() + 1)]
+    return [x[groups == i] for i in range(groups.min(), groups.max() + 1)]
 
 
 @st.composite
@@ -44,8 +42,16 @@ def discount_case(draw, rewards):
 
 class TestDiscount:
 
-    basic_reward_strat = float_tensors(min_dims=1, max_dims=2, min_side=1, max_side=10, elements=st.floats(-100, 100))
-    ones = float_tensors(min_dims=1, max_dims=2, min_side=1, max_side=10, elements=st.floats(1, 1))
+    basic_reward_strat = float_tensors(min_dims=1,
+                                       max_dims=2,
+                                       min_side=1,
+                                       max_side=10,
+                                       elements=st.floats(-100, 100, width=32))
+    ones = float_tensors(min_dims=1,
+                         max_dims=2,
+                         min_side=1,
+                         max_side=10,
+                         elements=st.floats(1, 1, width=32))
 
     @given(basic_reward_strat)
     def test_simple_gamma_one(self, inp):
@@ -77,7 +83,7 @@ class TestDiscount:
                 expected = 1
 
                 if msk[-1].item() == 0:
-                    expected += 1 *gamma
+                    expected += 1 * gamma
 
                 for v in grp.flip(0).tolist():
                     pytest.approx(v, .00001) == expected
