@@ -10,15 +10,14 @@ class NetworkHead(nn.Module):
     """Base class for policy and value network heads.
     """
 
-    def __init__(self, in_features: int, out_features: int, hidden: nn.Module =nn.Identity):
+    def __init__(self, in_features: int, out_features: int, hidden: nn.Module =nn.Identity()):
         super().__init__()
         self.in_features = in_features
-        self.out_features = out_features(hidden)
+        self.out_features = out_features
         self.hidden = hidden
 
-        hidden_output_dims = get_output_shape(self.hidden, tuple(self.in_features))[-1]
-
-        self.output_layer = nn.Linear(hidden_ouput_dims, out_features)
+        self._hidden_out = get_output_shape(self.hidden, (self.in_features,))[-1]
+        self.output_layer = nn.Linear(self._hidden_out, out_features)
 
     @property
     def info(self):
@@ -27,11 +26,11 @@ class NetworkHead(nn.Module):
                     output_dim=self.output_dim,
                     )
 
-    def output_activation(self, x):
+    def activation(self, x):
         return x
 
     def forward(self, inp):
         x = self.hidden(inp)
         x = self.output_layer(x)
-        x = self.output_activation(x)
+        x = self.activation(x)
         return x
