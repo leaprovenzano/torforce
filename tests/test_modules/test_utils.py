@@ -1,9 +1,10 @@
 from hypothesis import given, example
 from hypothesis import strategies as st
 
+import torch
 from torch import nn
 
-from torforce.modules.utils import get_output_shape
+from torforce.modules.utils import get_output_shape, Flatten
 
 
 convnet = nn.Sequential(nn.Conv2d(3, 16, 5),
@@ -12,6 +13,7 @@ convnet = nn.Sequential(nn.Conv2d(3, 16, 5),
                         nn.ReLU(),
                         nn.MaxPool2d(2),
                         nn.Conv2d(16, 32, 3),
+
                         )
 
 
@@ -33,3 +35,19 @@ class MultiOutput(nn.Module):
 def test_get_output_shape(model, input_shape, expected):
     result = get_output_shape(model, input_shape=input_shape)
     assert result == expected
+
+
+class test_Flatten:
+
+    def test_layer_flattens(self):
+        f = Flatten()
+        res = f(torch.rand(2, 4, 4))
+        assert tuple(res.shape) == (2, 16)
+
+    def test_in_network(self):
+        model = Sequential(convnet,
+                           Flatten())
+        x = torch.rand(1, 3, 20, 20)
+        y = model(x)
+        assert x.shape == (1, 512)
+        assert x.grad_fn is not None
