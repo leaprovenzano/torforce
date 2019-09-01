@@ -1,7 +1,6 @@
 from __future__ import annotations
 from torch import nn
 
-nn.Identity
 
 from .utils import get_output_shape
 
