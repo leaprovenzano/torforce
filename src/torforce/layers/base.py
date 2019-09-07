@@ -1,5 +1,18 @@
+from __future__ import annotations
+
 import torch
 from torch import nn
+
+
+class Flatten(nn.Module):
+
+    def __init__(self, start_dim=1):
+        super().__init__()
+        self.start_dim = start_dim
+
+    def forward(self, x):
+        return torch.flatten(x, start_dim=self.start_dim)
+
 
 
 class LinearBlock(nn.Module):

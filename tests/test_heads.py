@@ -4,8 +4,8 @@ from hypothesis import strategies as st
 import torch
 from torch import nn
 
-from torforce.modules.network_head import NetworkHead
-from torforce.modules.utils import Flatten
+from torforce.heads.base import NetworkHead
+from torforce.layers import Flatten
 
 
 
