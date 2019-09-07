@@ -4,8 +4,7 @@ from hypothesis import strategies as st
 from hypothesis import given
 
 
-from torforce.policy.distribution_layers import *
-from torforce.distributions import UnimodalBeta
+from torforce.layers.distribution import *
 
 from tests.strategies.torchtensors import float_tensors
 
