@@ -4,16 +4,6 @@ import torch
 from torch import nn
 
 
-class Flatten(nn.Module):
-
-    def __init__(self, start_dim=1):
-        super().__init__()
-        self.start_dim = start_dim
-
-    def forward(self, x):
-        return torch.flatten(x, start_dim=self.start_dim)
-
-
 
 def get_output_shape(model: nn.Module, input_shape: Union[tuple[int], list[tuple[int]]]) -> Union[tuple[int], list[tuple[int]]]:
     """given a torch module and a specified get the output dimensions.

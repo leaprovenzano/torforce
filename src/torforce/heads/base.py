@@ -2,7 +2,7 @@ from __future__ import annotations
 from torch import nn
 
 
-from .utils import get_output_shape
+from torforce.utils import get_output_shape
 
 
 class NetworkHead(nn.Module):

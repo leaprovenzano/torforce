@@ -117,6 +117,7 @@ class UnimodalBetaLayer(ContinuousDistributionLayer):
         a, b = self.activation(a), self.activation(b)
         return a, b
 
+
 class GaussianLayer(ContinuousDistributionLayer):
 
     """gaussian policy layer parameterized by learnable mean and std.
@@ -153,13 +154,13 @@ class GaussianLayer(ContinuousDistributionLayer):
         return mean, std
 
 
-
 class DiscreteDistributionLayer(DistributionLayer):
 
     """Base class for discrete policy layers
     """
 
     discrete = True
+
 
 class CategoricalLayer(DiscreteDistributionLayer):
 
