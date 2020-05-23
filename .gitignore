@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -23,7 +24,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -54,7 +54,6 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
 
 # Flask stuff:
 instance/
@@ -81,14 +80,15 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# dotenv
 .env
+.envrc
+
+# virtualenv
 .venv
-env/
 venv/
 ENV/
-env.bak/
-venv.bak/
+env/
 
 # Spyder project settings
 .spyderproject
@@ -102,3 +102,22 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# ignore hypothesis database
+.hypothesis/
+
+# direnv
+.envrc
+
+# jupyter notebooks
+*.ipynb
+
+# pycharm
+\.idea/
+
+# benchmarks ... for now
+.benchmarks/
+
+
+# ignore doc autosummary
+docs/_autosummary/*
