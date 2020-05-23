@@ -1,33 +1,65 @@
-==============
-About torforce
-==============
+========
+torforce
+========
 
 
 .. image:: https://img.shields.io/pypi/v/torforce.svg
-        :target: https://pypi.python.org/pypi/torforce
+    :target: https://pypi.python.org/pypi/torforce
+    :alt: pypi version
 
 .. image:: https://img.shields.io/travis/leaprovenzano/torforce.svg
-        :target: https://travis-ci.org/leaprovenzano/torforce
+    :target: https://travis-ci.com/leaprovenzano/torforce
+    :alt: travis build
 
 .. image:: https://readthedocs.org/projects/torforce/badge/?version=latest
-        :target: https://torforce.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+    :target: https://torforce.readthedocs.io/en/latest/?badge=latest
+    :alt: documentation status
 
+.. image:: https://codecov.io/gh/leaprovenzano/torforce/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/leaprovenzano/torforce
+    :alt: coverage
 
+.. image:: https://img.shields.io/badge/hypothesis-tested-brightgreen.svg
+    :target: https://hypothesis.readthedocs.io
+    :alt: hypothesis tested
 
-torforce is a library for reinforcement learning in pytorch.
-
-
-this library is currently in active development towards 0.1.0. until then nothing is stable and the main branch will be develop.
+----
 
 
 * Free software: MIT license
 
+* Documentation: `docs`_
+* Supported Python Versions: >=3.6
 
-Features
---------
+----
 
-* Custom `UnimodalBeta` distribution for use in policies with constrained output spaces.
-* `torforce.env_wrappers` for wrapping gym envs in a consistent interface pipelines and state tracking. `TensorEnvWrapper` handles tensor numpy conversion headaches
-* Losses : `ClippedSurrogateLoss`
-* Distribution Policy Layers: Policy Layers for learn a output a distribution over an action space (given some features)
+
+A library for doing RL in pytorch.
+
+
+
+Getting Started:
+~~~~~~~~~~~~~~~~
+
+Install the latest stable version with pip::
+
+   $ pip install torforce
+
+
+**Checkout the docs**:
+
+It's best to checkout the `docs`_. There you'll find detailed
+documentation of torforce}'s features and lots of examples of
+how to use them.
+
+What's is it?
+~~~~~~~~~~~~~
+
+* TODO
+
+Principles:
+~~~~~~~~~~~
+
+* TODO
+
+.. _docs: https://torforce.readthedocs.io
