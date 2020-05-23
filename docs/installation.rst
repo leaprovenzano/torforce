@@ -8,13 +8,13 @@ Installation
 Stable release
 --------------
 
-To install Torforce, run this command in your terminal:
+To install torforce, run this command in your terminal:
 
 .. code-block:: console
 
     $ pip install torforce
 
-This is the preferred method to install Torforce, as it will always install the most recent stable release.
+This is the preferred method to install torforce, as it will always install the most recent stable release.
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -26,7 +26,7 @@ you through the process.
 From sources
 ------------
 
-The sources for Torforce can be downloaded from the `Github repo`_.
+The sources for torforce can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
@@ -38,7 +38,7 @@ Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/leaprovenzano/torforce/tarball/master
+    $ curl -OJL https://github.com/leaprovenzano/torforce/tarball/master
 
 Once you have a copy of the source, you can install it with:
 

@@ -1,21 +1,23 @@
-Welcome to Torforce's documentation!
-======================================
+torforce docs
+====================================
+
+.. include:: ../README.rst
+
+.. currentmodule:: torforce
+
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   readme
-   installation
-   torforce
-   contributing
-   authors
-   history
+.. autosummary::
+   :toctree: _autosummary
+   
+
 
 Indices and tables
 ==================
+
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-

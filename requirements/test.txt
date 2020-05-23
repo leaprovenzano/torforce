@@ -1,6 +1,4 @@
-coverage
 pytest
-pytest-runner
-hypothesis>=4.34
+coverage
+hypothesis
 pytest-cov
-flake8

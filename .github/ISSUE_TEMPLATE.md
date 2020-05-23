@@ -1,4 +1,4 @@
-* Torforce version:
+* torforce version:
 * Python version:
 * Operating System:
 
