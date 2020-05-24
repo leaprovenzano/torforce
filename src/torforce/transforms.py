@@ -1,4 +1,13 @@
+import sys
 from typing import Optional, Sequence, Union, Callable, TypeVar
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+
+else:
+    from typing_extensions import Literal
+
+
 from abc import abstractmethod
 from dataclasses import dataclass
 import numpy as np
@@ -31,28 +40,6 @@ class Transform(Callable[[InT], OutT]):  # type: ignore
     @abstractmethod
     def __call__(self, x: InT) -> OutT:
         return NotImplemented
-
-
-@dataclass
-class Tensorize(Transform[TensorableT, torch.Tensor]):
-
-    """A Transform for turning stuff into tensors.
-
-    Example:
-        >>> from torforce.transforms import Tensorize
-        >>> import numpy as np
-        >>>
-        >>> step = Tensorize()
-        >>> step(np.array([1, 2, 3]))
-        tensor([1, 2, 3])
-
-        >>> step(2)
-        tensor(2)
-    """
-    dtype: Optional[torch.dtype] = None
-
-    def __call__(self, x: TensorableT) -> torch.Tensor:
-        return torch.tensor(x, dtype=self.dtype)
 
 
 @dataclass
@@ -95,6 +82,49 @@ class Numpy(Transform[NumT, np.ndarray]):
 
     def __call__(self, x: NumT) -> np.ndarray:
         return np.array(x, dtype=self.dtype)
+
+
+@dataclass
+class Tensorize(Transform[TensorableT, torch.Tensor]):
+
+    """A Transform for turning stuff into tensors.
+
+    Example:
+        >>> from torforce.transforms import Tensorize
+        >>> import numpy as np
+        >>>
+        >>> t = Tensorize()
+        >>> x = np.array([1, 2, 3])
+        >>> t(x)
+        tensor([1, 2, 3])
+
+        >>> t(2)
+        tensor(2)
+
+        Tensorize has support for the inversion operator when input_type is provided:
+        >>> t = Tensorize(input_type=np.ndarray)
+        >>> (~t)(t(x))
+        array([1, 2, 3])
+
+        >>> t = Tensorize(input_type=int)
+        >>> (~t)(t(2))
+        2
+
+    """
+    dtype: Optional[torch.dtype] = None
+    input_type: Optional[Literal[np.ndarray, float, int]] = None  # type: ignore
+
+    def __invert__(self):
+        if self.input_type in (float, int):
+            return Lambda(lambda x: self.input_type(x.item()))
+        elif self.input_type is np.ndarray:
+            return Numpy()
+        # input_type is not one of declarable
+        # types return NotImplemented
+        return NotImplemented
+
+    def __call__(self, x: TensorableT) -> torch.Tensor:
+        return torch.tensor(x, dtype=self.dtype)
 
 
 @dataclass
@@ -158,7 +188,7 @@ class Recenter(Transform[Numeric, Numeric]):
 
         Recenter has support for the inversion operator:
         >>> (~t)(t(x))
-        array([10.0, -5.0,  1.0, -2.0, -6.0])
+        array([10., -5.,  1., -2., -6.])
     """
 
     loc: Numeric
