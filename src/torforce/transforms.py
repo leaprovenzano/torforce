@@ -140,3 +140,40 @@ class Rescale(Transform[Numeric, Numeric]):
 
     def __call__(self, x: Numeric) -> Numeric:
         return x * self.scale
+
+
+@dataclass
+class Recenter(Transform[Numeric, Numeric]):
+
+    """Invertable Transform that for additive recentering of tensors, arrays and other numerics.
+
+    Example:
+        >>> from torforce.transforms import Recenter
+        >>> import numpy as np
+        >>>
+        >>> x = np.array([10., -5., 1., -2, -6])
+        >>> t = Recenter(x.mean())
+        >>> t(x)
+        array([10.4, -4.6,  1.4, -1.6, -5.6])
+
+        Recenter has support for the inversion operator:
+        >>> (~t)(t(x))
+        array([10.0, -5.0,  1.0, -2.0, -6.0])
+    """
+
+    loc: Numeric
+
+    def __post_init__(self):
+        # preform checks on the loc param.
+        if not isinstance(self.loc, (float, int, torch.Tensor, np.ndarray)):
+            # otherwise the type is its not a tensor, array, float or int... it's junk...
+            raise TypeError(
+                f'{self.__class__.__name__} expected loc parameter to be one of types:'
+                f' [{torch.Tensor, np.ndarray, float, int}] got type {type(self.loc)}'
+            )
+
+    def __invert__(self) -> 'Recenter':
+        return Recenter(loc=-1 * self.loc)
+
+    def __call__(self, x: Numeric) -> Numeric:
+        return x - self.loc
