@@ -5,24 +5,36 @@ import numpy as np
 import torch
 
 
-InType = TypeVar('InType')
-OutType = TypeVar('OutType')
+InT = TypeVar('InT')
+OutT = TypeVar('OutT')
 
-Tensorable = TypeVar('Tensorable', np.ndarray, Sequence[Union[int, float, bool]], int, float, bool)
-Numeric = TypeVar('Numeric', np.ndarray, torch.Tensor, int, float)
+TensorableT = TypeVar(
+    'TensorableT', np.ndarray, Sequence[Union[int, float, bool]], int, float, bool
+)
+NumT = TypeVar('NumT', np.ndarray, torch.Tensor, int, float)
+
+Numeric = Union[np.ndarray, torch.Tensor, int, float]
 
 
-class Transform(Callable[[InType], OutType]):  # type: ignore
+class Transform(Callable[[InT], OutT]):  # type: ignore
 
     """ABC for transforms."""
 
+    def __inverse__(self) -> 'Transform':
+        """override this method to define behavior for transforms which support inversion
+
+        If inversion is supported this method should return a new transform which is the inverse
+        of this transform.
+        """
+        return NotImplemented
+
     @abstractmethod
-    def __call__(self, x: InType) -> OutType:
+    def __call__(self, x: InT) -> OutT:
         return NotImplemented
 
 
 @dataclass
-class Tensorize(Transform[Tensorable, torch.Tensor]):
+class Tensorize(Transform[TensorableT, torch.Tensor]):
 
     """A Transform for turning stuff into tensors.
 
@@ -37,10 +49,9 @@ class Tensorize(Transform[Tensorable, torch.Tensor]):
         >>> step(2)
         tensor(2)
     """
-
     dtype: Optional[torch.dtype] = None
 
-    def __call__(self, x: Tensorable) -> torch.Tensor:
+    def __call__(self, x: TensorableT) -> torch.Tensor:
         return torch.tensor(x, dtype=self.dtype)
 
 
@@ -64,7 +75,7 @@ class Lambda(Transform):
 
 
 @dataclass
-class Numpy(Transform[Numeric, np.ndarray]):
+class Numpy(Transform[NumT, np.ndarray]):
 
     """Step that makes stuff into numpy arrays
 
@@ -82,5 +93,53 @@ class Numpy(Transform[Numeric, np.ndarray]):
 
     dtype: Optional[Union[np.dtype, str]] = None
 
-    def __call__(self, x: Numeric) -> np.ndarray:
+    def __call__(self, x: NumT) -> np.ndarray:
         return np.array(x, dtype=self.dtype)
+
+
+@dataclass
+class Rescale(Transform[Numeric, Numeric]):
+
+    """Invertable Transform that for rescaling tensors, arrays and other numerics.
+
+    Example:
+        >>> from torforce.transforms import Rescale
+        >>>
+        >>> t = Rescale(.5)
+        >>> x = 10.0
+        >>> t(x)
+        5.0
+
+        Rescale has support for the inversion operator:
+        >>> (~t)(t(x))
+        10.0
+    """
+
+    scale: Numeric
+
+    def __post_init__(self):
+        # preform checks on the scale param.
+        # check that scale won't cause zero division
+        # check will differ if its a tensor/array vs a scalar
+        if isinstance(self.scale, (torch.Tensor, np.ndarray)):
+            if any(self.scale == 0):
+                raise ValueError(
+                    f'{self.__class__.__name__} cannot accept scale'
+                    f' parameter containing zeros : got {self.scale}'
+                )
+        # otherwise its a scalar... check that...
+        elif isinstance(self.scale, (float, int)):
+            if self.scale == 0:
+                raise ValueError(f'{self.__class__.__name__} cannot accept scale parameter 0')
+        # otherwise the type is its not a tensor, array, float or int... it's junk...
+        else:
+            raise TypeError(
+                f'{self.__class__.__name__} expected scale parameter to be one of types:'
+                f' [{torch.Tensor, np.ndarray, float, int}] got type {type(self.scale)}'
+            )
+
+    def __invert__(self) -> 'Rescale':
+        return Rescale(scale=1 / self.scale)
+
+    def __call__(self, x: Numeric) -> Numeric:
+        return x * self.scale
