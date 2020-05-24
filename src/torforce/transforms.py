@@ -122,15 +122,12 @@ class Rescale(Transform[Numeric, Numeric]):
         # check that scale won't cause zero division
         # check will differ if its a tensor/array vs a scalar
         if isinstance(self.scale, (torch.Tensor, np.ndarray)):
-            if any(self.scale == 0):
-                raise ValueError(
-                    f'{self.__class__.__name__} cannot accept scale'
-                    f' parameter containing zeros : got {self.scale}'
-                )
+            if any(self.scale <= 0):
+                raise ValueError(f'{self.__class__.__name__} scale parameter must be > 0')
         # otherwise its a scalar... check that...
         elif isinstance(self.scale, (float, int)):
-            if self.scale == 0:
-                raise ValueError(f'{self.__class__.__name__} cannot accept scale parameter 0')
+            if self.scale <= 0:
+                raise ValueError(f'{self.__class__.__name__} scale parameter must be > 0')
         # otherwise the type is its not a tensor, array, float or int... it's junk...
         else:
             raise TypeError(
