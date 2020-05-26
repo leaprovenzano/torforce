@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Sequence, Union, Callable, TypeVar
+from typing import Optional, Sequence, Union, Callable, TypeVar, Tuple
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -12,6 +12,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 import numpy as np
 import torch
+
+from torforce.utils.scalers import MinMaxScaler
 
 
 InT = TypeVar('InT')
@@ -207,3 +209,34 @@ class Recenter(Transform[Numeric, Numeric]):
 
     def __call__(self, x: Numeric) -> Numeric:
         return x - self.loc
+
+
+@dataclass
+class RangeRescale(Transform):
+
+    """Invertable Transform for scaling between specific ranges
+
+    Example:
+        >>> from torforce.transforms import Recenter
+        >>> import numpy as np
+        >>>
+        >>> t = RangeRescale(inrange=(-1, 1), outrange=(0, 1))
+        >>> t(-1)
+        0.0
+
+        Recenter has support for the inversion operator:
+        >>> (~t)(0.0)
+        -1.0
+    """
+
+    inrange: Tuple[Union[float, int, torch.Tensor, np.ndarray]]
+    outrange: Tuple[Union[float, int, torch.Tensor, np.ndarray]]
+
+    def __post_init__(self):
+        self._scaler = MinMaxScaler(self.inrange, self.outrange)
+
+    def __invert__(self):
+        return self.__class__(self.outrange, self.inrange)
+
+    def __call__(self, x):
+        return self._scaler(x)
