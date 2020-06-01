@@ -1,54 +1,137 @@
-"""distributions based off of pytorch.distributions for use with policy models.
-
-"""
+from typing import ClassVar
 import torch
-from functools import partial
-from torch.distributions import Beta, Categorical, Normal
-from torforce.utils import MinMaxScaler
+from torforce.utils import classproperty
 
 
-class UnimodalBeta(Beta):
-
-    """Adjusted Beta(α + 1, β + 1) which when used along with softplus activation
-    ensures our Beta distribution is always unimodal.
-
-
-    Examples:
+def _apply_agg(f, dists, **kwargs):
+    assert all(map(lambda x: isinstance(x, type(dists[0])), dists))
+    params = map(lambda tensors: f(tensors, **kwargs), zip(*map(lambda x: x.params, dists)))
+    return dists[0].__class__(*params)
 
 
-        >>> import torch
-        >>> from torforce.distributions import UnimodalBeta
-        >>>
-        >>> a = torch.tensor([[2.93, 0.65, 0.84],
-        ...                   [0.52, 3.39, 5.86]])
-        >>> b = torch.tensor([[1.40, 0.06, 0.55],
-        ...                   [6.45, 3.83, 1.16]])
-        >>> dist = UnimodalBeta(a, b)
-
-        >>> dist.concentration1
-        tensor([[3.9300, 1.6500, 1.8400],
-                [1.5200, 4.3900, 6.8600]])
-
-        >>> dist.concentration0
-        tensor([[2.4000, 1.0600, 1.5500],
-                [7.4500, 4.8300, 2.1600]])
+def dist_cat(distributions, **kwargs):
+    return _apply_agg(torch.cat, distributions, **kwargs)
 
 
-        >>> dist.sample()
-        tensor([[0.4651, 0.3861, 0.5077],
-                [0.2856, 0.5835, 0.7325]])
-
-    """
-
-    def __init__(self, alpha, beta, validate_args=None):
-        super().__init__(alpha + 1, beta + 1, validate_args=validate_args)
+def dist_stack(distributions, **kwargs):
+    return _apply_agg(torch.stack, distributions, **kwargs)
 
 
+class TorforceDistributionMixin:
 
-class LogCategorical(Categorical):
+    @property
+    def shape(self) -> torch.Size:
+        return self.batch_shape + self.event_shape  # type: ignore
 
-    """Categorical distribution from logits by default.
-    """
+    def size(self, dim=None):
+        shape = self.shape
+        if dim is not None:
+            return shape[dim]
+        return shape
+
+    def __len__(self) -> int:
+        return self.batch_shape[0].item()  # type: ignore
+
+    @property
+    def params(self):
+        return self._natural_params
+
+    @property
+    def batch_ndims(self) -> int:
+        return len(self.batch_shape)  # type: ignore
+
+    def __repr__(self):
+        parmstr = ', '.join(f'{p!r}' for p in self.params)
+        return f'{self.__class__.__name__}({parmstr})'
+
+    def _new_from_apply(self, f, *args, **kwargs):
+        return self.__class__(*(f(p, *args, **kwargs) for p in self.params))
+
+    def unsqueeze(self, dim: int):
+        return self._new_from_apply(torch.Tensor.unsqueeze, dim=dim)
+
+    def __getitem__(self, idx):
+        return self._new_from_apply(torch.Tensor.__getitem__, idx)
+
+    def unbind(self):
+        if self.batch_ndims == 1:
+            return [
+                self.__class__(*map(lambda x: torch.unsqueeze(x, 0), p)) for p in zip(*self.params)
+            ]
+        return [self.__class__(*p) for p in zip(*self.params)]
+
+
+class IndependentBase(torch.distributions.Independent, TorforceDistributionMixin):
+
+    _base_dist_cls: ClassVar[torch.distributions.Distribution] = NotImplemented  # type: ignore
+    _event_dim = -1
+
+    @classproperty
+    def arg_constraints(cls):  # noqa : N805
+        return cls._base_dist_cls.arg_constraints
+
+    @classproperty
+    def support(cls):  # noqa : N805
+        return cls._base_dist_cls.support
+
+    def __init__(self, *args, **kwargs):
+        base = self._base_dist_cls(*args, **kwargs)
+        super().__init__(base, reinterpreted_batch_ndims=len(base.batch_shape[: self._event_dim]))
+
+    @property
+    def batch_ndims(self) -> int:
+        return self.reinterpreted_batch_ndims
+
+    @property
+    def params(self):
+        return self.base_dist._natural_params
+
+    def __repr__(self):
+        return TorforceDistributionMixin.__repr__(self)
+
+
+class IndyBeta(IndependentBase):
+
+    _base_dist_cls = torch.distributions.Beta  # type: ignore
+
+    @property
+    def concentration0(self):
+        return self.base_dist.concentration0
+
+    @property
+    def concentration1(self):
+        return self.base_dist.concentration1
+
+    @property
+    def params(self):
+        return (self.concentration1, self.concentration0)
+
+
+class IndyNormal(IndependentBase):
+
+    _base_dist_cls = torch.distributions.Normal  # type: ignore
+
+    @property
+    def loc(self):
+        return self.base_dist.loc
+
+    @property
+    def scale(self):
+        return self.base_dist.scale
+
+    @property
+    def params(self):
+        return (self.loc, self.scale)
+
+
+class ProbCategorical(TorforceDistributionMixin, torch.distributions.Categorical):
+
+    @property
+    def params(self):
+        return (self._param,)
+
+
+class LogCategorical(ProbCategorical):
 
     def __init__(self, logits: torch.Tensor):
         super().__init__(logits=logits)
