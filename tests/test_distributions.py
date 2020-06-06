@@ -1,43 +1,44 @@
-import numpy as np
 import torch
 
-from hypothesis import strategies as st
-from hypothesis import given
-from hypothesis.strategies import composite, floats
+import pytest
 
-from hypothesis.extra.numpy import arrays, array_shapes
-from tests.strategies.torchtensors import float_tensors, variable_batch_shape
-
-from torforce.distributions import UnimodalBeta, LogCategorical
+from torforce.distributions import LogCategorical, ProbCategorical, IndyBeta, IndyNormal
 
 
-EPS = 1e-5
+def logits(*shape):
+    return torch.log_softmax(torch.rand(*shape), -1)
 
 
-@composite
-def alpha_beta(draw):
-    shape = draw(array_shapes(min_dims=2, max_dims=2, min_side=2, max_side=10))
-    tensors = float_tensors(dtypes='float', shape=shape,
-                            unique=True, elements=floats(min_value=9.999999747378752e-06, max_value=100))
-
-    return draw(tensors), draw(tensors)
+def probs(*shape):
+    return torch.softmax(torch.rand(*shape), -1)
 
 
-class TestUnimodalBeta(object):
-
-    @given(alpha_beta())
-    def test_alpha_beta_gte_one(self, params):
-        alpha, beta = params
-        dist = UnimodalBeta(alpha, beta)
-        np.testing.assert_array_equal(dist.concentration0 >= 1, 1)
-        np.testing.assert_array_equal(dist.concentration1 >= 1, 1)
+def positive(*shape):
+    return torch.rand(*shape)
 
 
-@given(float_tensors(dtypes='float',
-                     shape=st.lists(st.integers(1, 10), min_size=2, max_size=2).map(tuple),
-                     unique=True,
-                     elements=floats(min_value=-100, max_value=100)))
-def test_LogitCategorical(x):
-    inp = torch.log_softmax(x, -1)
-    dist = LogCategorical(inp)
-    torch.testing.assert_allclose(dist.logits, inp)
+def normal(*shape):
+    return torch.normal(0, 1, size=shape)
+
+
+def assert_all_parirs_close(x, y, **kwargs):
+    for xx, yy in zip(x, y):
+        torch.testing.assert_allclose(xx, yy, **kwargs)
+
+
+@pytest.mark.parametrize(
+    'dist_cls, params,',
+    [
+        (LogCategorical, (logits(5, 3),)),
+        (ProbCategorical, (probs(5, 3),)),
+        (IndyNormal, (normal(5, 3), positive(5, 3))),
+        (IndyNormal, (normal(5, 3), torch.tensor(0.5))),
+        (IndyBeta, (positive(5, 3), positive(5, 3))),
+    ],
+)
+def test_init_and_params(dist_cls, params):
+    dist = dist_cls(*params)
+    assert isinstance(dist, dist_cls)
+    assert isinstance(dist.params, tuple)
+    assert len(dist.params) == len(params)
+    assert_all_parirs_close(dist.params, params)
