@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from torforce.utils.scalers import MinMaxScaler
+from torforce.utils.fixed_range import FixedRange
 
 
 InT = TypeVar('InT')
@@ -229,14 +229,20 @@ class RangeRescale(Transform):
         -1.0
     """
 
-    inrange: Tuple[Union[float, int, torch.Tensor, np.ndarray]]
-    outrange: Tuple[Union[float, int, torch.Tensor, np.ndarray]]
+    frm: Union[FixedRange, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
+    to: Union[FixedRange, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
 
     def __post_init__(self):
-        self._scaler = MinMaxScaler(self.inrange, self.outrange)
+        # transform tor FixedRange if they are not already
+        if not isinstance(self.inrange, FixedRange):
+            self.inrange = FixedRange(*self.inrange)
+        if not isinstance(self.outrange, FixedRange):
+            self.outrange = FixedRange(*self.outrange)
 
     def __invert__(self):
         return self.__class__(self.outrange, self.inrange)
 
     def __call__(self, x):
-        return self._scaler(x)
+        return (
+            (x - self.inrange.low) / self.inrange.scale
+        ) * self.outrange.scale + self.outrange.low
