@@ -3,7 +3,7 @@ import torch
 import pytest
 
 from torforce.distributions import LogCategorical, Categorical, IndyBeta, IndyNormal
-from torforce.distributions import stack
+from torforce.distributions import stack, cat
 
 
 def logits(*shape):
@@ -94,6 +94,18 @@ class DistSuite:
         assert stacked.batch_ndims == 2
         return stacked, other_dist
 
+    def test_cat(self):
+        other_dist = self._new_dist(2, self.dist.shape[-1])
+        catted = cat([self.dist, other_dist], dim=0)
+        assert isinstance(catted, self.dist_cls)
+        assert catted.shape == torch.Size([self.dist.shape[0] + 2, self.dist.shape[-1]])
+        assert catted.batch_ndims == self.dist.batch_ndims
+        assert (
+            catted.sample().shape
+            == torch.Size([2 + self.dist.shape[0]]) + self.dist.sample().shape[1:]
+        )
+        return catted, other_dist
+
 
 class TestCategorical(DistSuite):
 
@@ -150,6 +162,10 @@ class TestCategorical(DistSuite):
         torch.testing.assert_allclose(
             stacked.probs, torch.stack((self.dist.probs, other_dist.probs), dim=1)
         )
+
+    def test_cat(self):
+        catted, other_dist = super().test_cat()
+        torch.testing.assert_allclose(catted.probs, torch.cat((self.dist.probs, other_dist.probs)))
 
 
 class TestLogCategorical(TestCategorical):
@@ -220,6 +236,11 @@ class TestIndyNormal(DistSuite):
             stacked.scale, torch.stack((self.dist.scale, other_dist.scale), dim=1)
         )
 
+    def test_cat(self):
+        catted, other_dist = super().test_cat()
+        torch.testing.assert_allclose(catted.mean, torch.cat((self.dist.mean, other_dist.mean)))
+        torch.testing.assert_allclose(catted.scale, torch.cat((self.dist.scale, other_dist.scale)))
+
 
 class TestIndyBeta(DistSuite):
 
@@ -269,4 +290,13 @@ class TestIndyBeta(DistSuite):
         torch.testing.assert_allclose(
             stacked.concentration1,
             torch.stack((self.dist.concentration1, other_dist.concentration1), dim=1),
+        )
+
+    def test_cat(self):
+        catted, other_dist = super().test_cat()
+        torch.testing.assert_allclose(
+            catted.concentration0, torch.cat((self.dist.concentration0, other_dist.concentration0))
+        )
+        torch.testing.assert_allclose(
+            catted.concentration1, torch.cat((self.dist.concentration1, other_dist.concentration1))
         )
