@@ -124,14 +124,18 @@ class IndyNormal(IndependentBase):
         return (self.loc, self.scale)
 
 
-class ProbCategorical(TorforceDistributionMixin, torch.distributions.Categorical):
+class Categorical(TorforceDistributionMixin, torch.distributions.Categorical):
 
     @property
     def params(self):
         return (self._param,)
 
+    @property
+    def shape(self) -> torch.Size:
+        return self._param.shape
 
-class LogCategorical(ProbCategorical):
+
+class LogCategorical(Categorical):
 
     def __init__(self, logits: torch.Tensor):
         super().__init__(logits=logits)
