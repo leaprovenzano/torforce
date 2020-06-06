@@ -1,24 +1,18 @@
-from hypothesis import given, example
-from hypothesis import strategies as st
-
-import torch
 from torch import nn
 
 from torforce.heads.base import NetworkHead
-from torforce.layers import Flatten
+from torforce.modules import Flatten
 
 
-
-convnet = nn.Sequential(nn.Conv2d(3, 16, 5),
-                        nn.ReLU(),
-                        nn.Conv2d(16, 16, 5),
-                        nn.ReLU(),
-                        nn.MaxPool2d(2),
-                        nn.Conv2d(16, 32, 3),
-                        Flatten()
-                        )
-
-
+convnet = nn.Sequential(
+    nn.Conv2d(3, 16, 5),
+    nn.ReLU(),
+    nn.Conv2d(16, 16, 5),
+    nn.ReLU(),
+    nn.MaxPool2d(2),
+    nn.Conv2d(16, 32, 3),
+    Flatten(),
+)
 
 
 class TestNeworkHead:
@@ -33,10 +27,9 @@ class TestNeworkHead:
 
     def test_with_hidden(self):
 
-        network_head = NetworkHead(1, 2, hidden=nn.Sequential(nn.Linear(1, 5),
-                                                           nn.ReLU(),
-                                                           nn.Linear(5, 10),
-                                                           nn.ReLU()))
+        network_head = NetworkHead(
+            1, 2, hidden=nn.Sequential(nn.Linear(1, 5), nn.ReLU(), nn.Linear(5, 10), nn.ReLU())
+        )
 
         assert network_head.in_features == 1
         assert network_head.out_features == 2
@@ -44,8 +37,7 @@ class TestNeworkHead:
         assert network_head.in_features == 1, network_head.out_features == 2
         assert len([p for p in network_head.parameters()]) == 6
 
-
-    def test_with_Conv_hidden(self):
+    def test_with_conv_hidden(self):
 
         network_head = NetworkHead((3, 24, 24), 64, hidden=convnet)
 
