@@ -26,7 +26,7 @@ def eval_context(model: nn.Module):
     """context manager for temporarily setting model in eval mode.
 
     Example:
-        >>> from torforce.modules.utils import eval_context
+        >>> from torforce.modeling.utils import eval_context
         >>>
         >>> model = nn.Sequential(nn.Linear(5, 10), nn.Linear(10, 10))
         >>> with eval_context(model):
