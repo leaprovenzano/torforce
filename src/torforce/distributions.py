@@ -9,7 +9,7 @@ def _apply_agg(f, dists, **kwargs):
     return dists[0].__class__(*params)
 
 
-def cat(distributions, dim=1):
+def cat(distributions, dim=0):
     if dim == -1 or dim > distributions[0].batch_ndims:
         raise ValueError('cannot cat distributions along event dim')
     return _apply_agg(torch.cat, distributions, dim=dim)
