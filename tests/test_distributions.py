@@ -147,3 +147,73 @@ class TestLogCategorical(TestCategorical):
     @property
     def probs(self):
         return torch.exp(self.p)
+
+
+class TestIndyNormal(DistSuite):
+
+    dist_cls = IndyNormal
+    torch_dist_cls = torch.distributions.Normal
+    mean, std = (normal(5, 3), positive(5, 3))
+
+    @classmethod
+    def build_dist(cls):
+        return cls.dist_cls(cls.mean, cls.std)
+
+    @classmethod
+    def build_torch_dist(cls):
+        return torch.distributions.Independent(
+            cls.torch_dist_cls(cls.mean, cls.std), reinterpreted_batch_ndims=1
+        )
+
+    def test_mean(self):
+        torch.testing.assert_allclose(self.dist.mean, self.mean)
+
+    def test_std(self):
+        torch.testing.assert_allclose(self.dist.scale, self.std)
+
+    def test_getitem(self):
+        idx_dist = self.dist[:2]
+        assert isinstance(idx_dist, self.dist_cls)
+        assert idx_dist.shape == idx_dist.size() == torch.Size([2, 3])
+        torch.testing.assert_allclose(idx_dist.mean, self.dist.mean[:2])
+        torch.testing.assert_allclose(idx_dist.scale, self.dist.scale[:2])
+
+    def test_sample(self):
+        sample = self.dist.sample()
+        assert sample.shape == self.dist.shape
+
+
+class TestIndyBeta(DistSuite):
+
+    dist_cls = IndyBeta
+    torch_dist_cls = torch.distributions.Beta
+    concentration1, concentration0 = (positive(5, 3), positive(5, 3))
+
+    @classmethod
+    def build_dist(cls):
+        return cls.dist_cls(cls.concentration1, cls.concentration0)
+
+    @classmethod
+    def build_torch_dist(cls):
+        return torch.distributions.Independent(
+            cls.torch_dist_cls(cls.concentration1, cls.concentration0), reinterpreted_batch_ndims=1
+        )
+
+    def test_concentration0(self):
+        torch.testing.assert_allclose(self.dist.concentration0, self.concentration0)
+
+    def test_concentration1(self):
+        torch.testing.assert_allclose(self.dist.concentration1, self.concentration1)
+
+    def test_getitem(self):
+        idx_dist = self.dist[:2]
+        assert isinstance(idx_dist, self.dist_cls)
+        assert idx_dist.shape == idx_dist.size() == torch.Size([2, 3])
+        torch.testing.assert_allclose(idx_dist.concentration0, self.dist.concentration0[:2])
+        torch.testing.assert_allclose(idx_dist.concentration1, self.dist.concentration1[:2])
+
+    def test_sample(self):
+        sample = self.dist.sample()
+        assert sample.shape == self.dist.shape
+        assert sample.min() >= 0
+        assert sample.max() <= 1
