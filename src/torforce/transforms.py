@@ -229,8 +229,8 @@ class RangeRescale(Transform):
         -1.0
     """
 
-    frm: Union[FixedRange, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
-    to: Union[FixedRange, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
+    inrange: Union[FixedRange, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
+    outrange: Union[FixedRange, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
 
     def __post_init__(self):
         # transform tor FixedRange if they are not already
