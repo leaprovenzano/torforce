@@ -1,2 +1,2 @@
 from .general import Flatten
-from .policy import BetaPolicyLayer, GaussianPolicyLayer
+from .policy import BetaPolicyLayer, GaussianPolicyLayer, DiscretePolicyLayer

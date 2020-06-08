@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torforce.activations import SoftPlusOne
-from torforce.distributions import IndyBeta, IndyNormal
+from torforce.distributions import IndyBeta, IndyNormal, LogCategorical
 
 
 class BetaPolicyLayer(nn.Module):
@@ -102,3 +102,41 @@ class GaussianPolicyLayer(nn.Module):
 
     def forward(self, x: torch.Tensor) -> IndyNormal:
         return self.build_dist(self.loc(x), self.std)
+
+
+class DiscretePolicyLayer(nn.Module):
+
+    """Policy layer for discrete action spaces.
+
+    Args:
+        in_features: number of input features
+        n_actions: number of possible actions
+
+    Example:
+        >>> from torforce.modules import DiscretePolicyLayer
+        >>> import torch
+        >>> _ = torch.manual_seed(2)
+        >>>
+        >>> n_actions = 4
+        >>>
+        >>> policy_layer = DiscretePolicyLayer(in_features=10, n_actions=n_actions)
+        >>> hidden = torch.normal(0, 2, size=(3, 10)) # (bs, hidden)
+        >>> dist = policy_layer(hidden)
+        >>> dist.sample()
+        tensor([2, 0, 1])
+    """
+
+    def __init__(self, in_features: int, n_actions: int):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = self.n_actions = n_actions
+        self.linear = nn.Linear(self.in_features, self.out_features)
+        self.activation = nn.LogSoftmax(dim=-1)
+
+    def build_dist(self, scores: torch.Tensor) -> LogCategorical:
+        return LogCategorical(scores)
+
+    def forward(self, x: torch.Tensor) -> LogCategorical:
+        x = self.linear(x)
+        x = self.activation(x)
+        return self.build_dist(x)
