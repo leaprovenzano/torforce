@@ -1,5 +1,7 @@
-from typing import ClassVar
+from typing import ClassVar, Any
+import functools
 import torch
+
 from torforce.utils import classproperty, TorchFuncRegistry
 
 
@@ -73,6 +75,14 @@ class TorforceDistributionMixin:
             return NotImplemented
         kwargs = kwargs if kwargs is not None else {}
         return self.torchfunc_registry[func](*args, **kwargs)
+
+    def __eq__(self, other: Any):
+        if isinstance(other, self.__class__):
+            return functools.reduce(
+                torch.logical_and,
+                ((x == y).all(dim=self.batch_ndims) for x, y in zip(self.params, other.params)),
+            )
+        return NotImplemented
 
 
 class IndependentBase(torch.distributions.Independent, TorforceDistributionMixin):
