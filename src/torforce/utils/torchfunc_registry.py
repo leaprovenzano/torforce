@@ -63,6 +63,8 @@ class TorchFuncRegistry(MethodRegistryDescriptor[Callable, BoundT]):
         self._registry = AncestorChainMap(mapping)
 
     def register(self, torchfunc: Callable) -> Callable:
+        """this can be used as a decorator for registering torchfunc implementations.
+        """
         # check the torchfunc can actually be overidden
         if torchfunc not in OVERRIDABLE_TORCHFUNCS:
             raise TypeError(
