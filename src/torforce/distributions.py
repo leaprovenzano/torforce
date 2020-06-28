@@ -1,6 +1,8 @@
-from typing import ClassVar
+from typing import ClassVar, Any
+import functools
 import torch
-from torforce.utils import classproperty
+
+from torforce.utils import classproperty, TorchFuncRegistry
 
 
 def _apply_agg(f, dists, **kwargs):
@@ -22,6 +24,8 @@ def stack(distributions, dim=1):
 
 
 class TorforceDistributionMixin:
+
+    torchfunc_registry: TorchFuncRegistry = TorchFuncRegistry()
 
     @property
     def shape(self) -> torch.Size:
@@ -51,18 +55,34 @@ class TorforceDistributionMixin:
     def _new_from_apply(self, f, *args, **kwargs):
         return self.__class__(*(f(p, *args, **kwargs) for p in self.params))
 
+    @torchfunc_registry.register(torch.unsqueeze)
     def unsqueeze(self, dim: int):
         return self._new_from_apply(torch.Tensor.unsqueeze, dim=dim)
 
     def __getitem__(self, idx):
         return self._new_from_apply(torch.Tensor.__getitem__, idx)
 
+    @torchfunc_registry.register(torch.unbind)
     def unbind(self):
         if self.batch_ndims == 1:
             return [
                 self.__class__(*map(lambda x: torch.unsqueeze(x, 0), p)) for p in zip(*self.params)
             ]
         return [self.__class__(*p) for p in zip(*self.params)]
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        if func not in self.torchfunc_registry:
+            return NotImplemented
+        kwargs = kwargs if kwargs is not None else {}
+        return self.torchfunc_registry[func](*args, **kwargs)
+
+    def __eq__(self, other: Any):
+        if isinstance(other, self.__class__):
+            return functools.reduce(
+                torch.logical_and,
+                ((x == y).all(dim=self.batch_ndims) for x, y in zip(self.params, other.params)),
+            )
+        return NotImplemented
 
 
 class IndependentBase(torch.distributions.Independent, TorforceDistributionMixin):
@@ -129,7 +149,6 @@ class IndyNormal(IndependentBase):
 
 
 class Categorical(TorforceDistributionMixin, torch.distributions.Categorical):
-
     @property
     def params(self):
         return (self._param,)
@@ -140,6 +159,5 @@ class Categorical(TorforceDistributionMixin, torch.distributions.Categorical):
 
 
 class LogCategorical(Categorical):
-
     def __init__(self, logits: torch.Tensor):
         super().__init__(logits=logits)
