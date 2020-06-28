@@ -1,5 +1,5 @@
-torch
+torch>=1.5.1
 gym
 singledispatchmethod;python_version<"3.8"
 typing_extensions;python_version<"3.8"
-
+collectionish>=0.2.1
