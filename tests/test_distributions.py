@@ -106,6 +106,13 @@ class DistSuite:
         )
         return catted, other_dist
 
+    def test_unsqueeze(self):
+        expected_shape = self.dist.shape[:1] + (1,) + self.dist.shape[1:]
+        a = self.dist.unsqueeze(1)
+        b = torch.unsqueeze(self.dist, 1)
+        assert a.shape == b.shape == expected_shape
+        assert all(a == b)
+
 
 class TestCategorical(DistSuite):
 
