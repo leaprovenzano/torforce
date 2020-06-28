@@ -59,9 +59,6 @@ class TorchFuncRegistry(MethodRegistryDescriptor[Callable, BoundT]):
     """a classlevel registry for registring __torch_function__ overides.
     """
 
-    def __init__(self, **mapping):
-        self._registry = AncestorChainMap(mapping)
-
     def register(self, torchfunc: Callable) -> Callable:
         """this can be used as a decorator for registering torchfunc implementations.
         """
