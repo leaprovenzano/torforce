@@ -27,6 +27,7 @@ class BetaPolicyLayer(nn.Module):
                 [0.4048, 0.1518, 0.4362, 0.2096],
                 [0.5033, 0.1499, 0.7499, 0.7165]])
     """
+
     action_range = (0.0, 1.0)
 
     def __init__(self, in_features: int, action_dims: int):
@@ -74,6 +75,7 @@ class GaussianPolicyLayer(nn.Module):
                 [ 0.2909, -0.4104, -0.6796, -0.2392],
                 [-0.4066, -0.2749, -1.6538, -1.6742]])
     """
+
     action_range = (-float('inf'), float('inf'))
 
     def __init__(
