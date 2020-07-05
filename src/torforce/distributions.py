@@ -62,6 +62,12 @@ class TorforceDistributionMixin:
     def __getitem__(self, idx):
         return self._new_from_apply(torch.Tensor.__getitem__, idx)
 
+    def __setitem__(self, idx, v):
+        if isinstance(v, self.__class__):
+            for i, p in enumerate(self.params):
+                p[idx] = v.params[i]
+        return NotImplemented
+
     @torchfunc_registry.register(torch.unbind)
     def unbind(self):
         if self.batch_ndims == 1:
