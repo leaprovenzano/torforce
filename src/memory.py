@@ -45,9 +45,8 @@ class FixedStepMemory(Dataset):
 
     def _init_memory(self, step_memory):
         memory_type = step_memory.__class__
-        expanded_shape = (self.steps, ...)
         self._memory = memory_type(
-            **{k: expanded_empty_like(v, expanded_shape) for k, v in step_memory.items()}
+            **{k: expanded_empty_like(v, self.steps, ...) for k, v in step_memory.items()}
         )
 
     def update(self, step_memory):
