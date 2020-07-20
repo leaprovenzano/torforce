@@ -19,7 +19,7 @@ def gae(
     gamma: float = 0.99,
     lambd: float = 0.95,
 ):
-    """generalised advantage estimate (gae) as described in `High-Dimensional Continuous Control
+    """generalised advantage estimate as described in `High-Dimensional Continuous Control
     Using Generalized Advantage Estimation`_ .
 
     Args:
