@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from torforce.utils.fixed_range import FixedRange
+from torforce.types import Range
 
 
 InT = TypeVar('InT')
@@ -113,6 +113,7 @@ class Tensorize(Transform[TensorableT, torch.Tensor]):
         2
 
     """
+
     dtype: Optional[torch.dtype] = None
     input_type: Optional[Literal[np.ndarray, float, int]] = None  # type: ignore
 
@@ -229,20 +230,18 @@ class RangeRescale(Transform):
         -1.0
     """
 
-    inrange: Union[FixedRange, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
-    outrange: Union[FixedRange, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
+    inrange: Union[Range, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
+    outrange: Union[Range, Tuple[Union[float, int, torch.Tensor, np.ndarray]]]
 
     def __post_init__(self):
-        # transform tor FixedRange if they are not already
-        if not isinstance(self.inrange, FixedRange):
-            self.inrange = FixedRange(*self.inrange)
-        if not isinstance(self.outrange, FixedRange):
-            self.outrange = FixedRange(*self.outrange)
+        # transform tor Range if they are not already
+        if not isinstance(self.inrange, Range):
+            self.inrange = Range(*self.inrange)
+        if not isinstance(self.outrange, Range):
+            self.outrange = Range(*self.outrange)
 
     def __invert__(self):
         return self.__class__(self.outrange, self.inrange)
 
     def __call__(self, x):
-        return (
-            (x - self.inrange.low) / self.inrange.scale
-        ) * self.outrange.scale + self.outrange.low
+        return ((x - self.inrange.low) / self.inrange.span) * self.outrange.span + self.outrange.low
