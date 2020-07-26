@@ -1,4 +1,5 @@
-from typing import Iterable, Callable
+from typing import Iterable, Callable, Union
+import torch
 import numpy as np
 
 
@@ -59,3 +60,17 @@ class classproperty:  # noqa: N801
         if inst is not None:
             return self.f(inst)
         return self.f(owner)
+
+
+def as_scalar(x: Union[float, int, torch.Tensor, np.ndarray]) -> float:
+    """given a numpy array or torch tensor of all the same value (and any shape) return that value \
+    as a float.
+    """
+    if isinstance(x, (float, int)):
+        return x
+    flat = np.ndarray.flatten(np.asarray(x))
+    if all(flat[0] == flat):
+        return flat[0]
+    raise TypeError(
+        f'only {x.__class__.__name__}s with a single unique value can be converted to scalars'
+    )
