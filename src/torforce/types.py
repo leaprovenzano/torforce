@@ -44,7 +44,7 @@ class Range:
     def scale(self):
         return self.span
 
-    def get_transform_to(self, other: 'Range'):
+    def transform_to(self, other: 'Range'):
         if not isinstance(other, Range):
             return NotImplemented
         from torforce.transforms import RangeRescale
