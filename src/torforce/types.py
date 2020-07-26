@@ -43,3 +43,10 @@ class Range:
     @property
     def scale(self):
         return self.span
+
+    def get_transform_to(self, other: 'Range'):
+        if not isinstance(other, Range):
+            return NotImplemented
+        from torforce.transforms import RangeRescale
+
+        return RangeRescale(self, other)
