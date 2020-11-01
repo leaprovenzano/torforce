@@ -6,7 +6,11 @@ from collectionish import AncestorChainMap
 
 
 def _get_overridable_torchfuncs():
-    return set(itertools.chain.from_iterable(torch._overrides.get_overridable_functions().values()))
+    if tuple(map(int, torch.__version__.split('.'))) < (1, 7, 0):
+        overrides = torch._overrides
+    else:
+        overrides = torch.overrides
+    return set(itertools.chain.from_iterable(overrides.get_overridable_functions().values()))
 
 
 OVERRIDABLE_TORCHFUNCS = _get_overridable_torchfuncs()
@@ -56,12 +60,10 @@ class MethodRegistryDescriptor(Generic[KT, BoundT]):
 
 
 class TorchFuncRegistry(MethodRegistryDescriptor[Callable, BoundT]):
-    """a classlevel registry for registring __torch_function__ overides.
-    """
+    """a classlevel registry for registring __torch_function__ overides."""
 
     def register(self, torchfunc: Callable) -> Callable:
-        """this can be used as a decorator for registering torchfunc implementations.
-        """
+        """this can be used as a decorator for registering torchfunc implementations."""
         # check the torchfunc can actually be overidden
         if torchfunc not in OVERRIDABLE_TORCHFUNCS:
             raise TypeError(
